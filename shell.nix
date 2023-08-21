@@ -4,7 +4,9 @@
 
 pkgs.mkShell {
   buildInputs = [
+    pkgs.dune_3
     pkgs.ocaml
     pkgs.ocamlPackages.ocaml-lsp
+    pkgs.ocamlPackages.utop
   ];
 }
