@@ -1,5 +1,3 @@
-## LambdaIR - Lambda Calculus Compiled to Linear IR
+## LIR - Lambda Calculus to IR Compiler
 
-+ hello world in ocaml
-
-- elementary IO involving algorithm (fibs, fact)
+- data types + basic examples
