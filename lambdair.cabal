@@ -1,0 +1,29 @@
+cabal-version:   3.8
+name:            lambdair
+version:         0.0.1.0
+author:          vglfr
+maintainer:      vf.velt@gmail.com
+
+common lambdair
+  ghc-options:
+    -Wall
+    -Wcompat
+    -Werror
+    -Widentities
+    -Wincomplete-uni-patterns
+    -Wpartial-fields
+    -Wredundant-constraints
+  build-depends:
+      base == 4.18.*
+  default-Language:
+    GHC2021
+
+library
+  import:
+    lambdair
+  exposed-modules:
+      Lambdair.AST
+    , Lambdair.Example
+    , Lambdair.IR
+  hs-source-dirs:
+    src

@@ -1,12 +1,22 @@
-{
-  pkgs ? import (fetchTarball "https://github.com/NixOS/nixpkgs/archive/fb942492b7accdee4e6d17f5447091c65897dde4.tar.gz") { }
-}:
+let
+  config = {
+    packageOverrides = pkgs: {
+      haskell-language-server = pkgs.haskell-language-server.override {
+        supportedGhcVersions = [ "96" ];
+      };
+    };
+  };
 
-pkgs.mkShell {
-  buildInputs = [
-    pkgs.dune_3
-    pkgs.ocaml
-    pkgs.ocamlPackages.ocaml-lsp
-    pkgs.ocamlPackages.utop
-  ];
-}
+in
+  {
+    pkgs ? import (fetchTarball "https://github.com/NixOS/nixpkgs/archive/fb942492b7accdee4e6d17f5447091c65897dde4.tar.gz") { inherit config; }
+  }:
+
+  pkgs.mkShell {
+    buildInputs = [
+      pkgs.cabal-install
+      pkgs.haskell.compiler.ghc96
+      pkgs.haskell-language-server
+      pkgs.haskellPackages.hoogle
+    ];
+  }
