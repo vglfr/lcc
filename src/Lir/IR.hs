@@ -1,8 +1,17 @@
 module Lir.IR where
 
+data IR
+  = Main [Ins]
+  | Proc Label [Ins]
+
 data Ins
-  = Cal Dat Dat
+  = Cal Int
+  | Loa Dat
 
 data Dat
-  = Pro Int
+  = Arg Int
+  | Ref Int
+  | Ret
   | Val Char
+
+type Label = Int

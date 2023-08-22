@@ -25,5 +25,6 @@ library
       Lir.AST
     , Lir.Example
     , Lir.IR
+    , Lir.Typecheck
   hs-source-dirs:
     src
