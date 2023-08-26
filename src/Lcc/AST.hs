@@ -1,4 +1,4 @@
-module Lir.AST where
+module Lcc.AST where
 
 import Data.String (IsString, fromString)
 import GHC.Show (showSpace)
@@ -9,6 +9,13 @@ data Exp
   | Var String
 
 instance Show Exp where
+  {-
+  showsPrec n e = case e of
+                    Abs h b -> showParen (n > 1) $ showsPrec (max n 1) h . showSpace . showsPrec (max n 1) x
+                    App f x -> showParen (n > 2) $ showsPrec (max0 n 2) f . showSpace . showsPrec (max0 n 2) x
+                    Var x -> showString x
+  max0 m k = if m == 0 then 1 else max m k
+  -}
   showsPrec _ (Var x)   = showString x
   showsPrec _ (Abs h b) = showString "λ" . shows h . showAbs b
    where

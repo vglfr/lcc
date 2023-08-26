@@ -1,4 +1,4 @@
-module Lir.Typecheck where
+module Lcc.Typecheck where
 
 {-
 All values are single characters

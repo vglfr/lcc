@@ -1,9 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Lir.Example where
+module Lcc.Example where
 
-import Lir.AST (λ, (∘), Exp)
-import Lir.IR
+import Lcc.AST (λ, (∘), Exp)
+import Lcc.IR
   (
     Dat (Arg, Ref, Ret, Val)
   , IR (Main, Proc)

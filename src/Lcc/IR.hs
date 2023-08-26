@@ -1,4 +1,4 @@
-module Lir.IR where
+module Lcc.IR where
 
 data IR
   = Main [Ins]

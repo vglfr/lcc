@@ -1,10 +1,10 @@
 cabal-version:   3.8
-name:            lir
+name:            lcc
 version:         0.0.1.0
 author:          vglfr
 maintainer:      vf.velt@gmail.com
 
-common lir
+common lcc
   ghc-options:
     -Wall
     -Wcompat
@@ -20,11 +20,11 @@ common lir
 
 library
   import:
-    lir
+    lcc
   exposed-modules:
-      Lir.AST
-    , Lir.Example
-    , Lir.IR
-    , Lir.Typecheck
+      Lcc.AST
+    , Lcc.Example
+    , Lcc.IR
+    , Lcc.Typecheck
   hs-source-dirs:
     src
