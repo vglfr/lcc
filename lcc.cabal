@@ -15,6 +15,7 @@ common lcc
     -Wredundant-constraints
   build-depends:
       base == 4.18.*
+    , process == 1.6.*
   default-Language:
     GHC2021
 
@@ -23,6 +24,7 @@ library
     lcc
   exposed-modules:
       Lcc.AST
+    , Lcc.Codegen
     , Lcc.Example
     , Lcc.IR
     , Lcc.Typecheck

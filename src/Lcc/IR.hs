@@ -1,7 +1,11 @@
 module Lcc.IR where
 
+import Data.List (intercalate)
+
+data Spool a = Spool Name [a]
+
 data IR
-  = Main [Ins]
+  = Start [Ins]
   | Proc Label [Ins]
 
 data Ins
@@ -15,3 +19,7 @@ data Dat
   | Val Char
 
 type Label = Int
+type Name = String
+
+instance Show a => Show (Spool a) where
+  show (Spool n as) = intercalate "\n\n" $ "; " <> n : fmap show as

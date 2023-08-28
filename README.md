@@ -1,5 +1,6 @@
-## LIR - Lambda Calculus to IR Compiler
+## LCC - Lambda Calculus Compiler
 
 - data types + basic examples
-  - fix Show for AST
+  - refactor Show for AST
+  - rectify associativity
   - partial functions

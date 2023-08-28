@@ -15,8 +15,10 @@ in
   pkgs.mkShell {
     buildInputs = [
       pkgs.cabal-install
+      pkgs.gdb
       pkgs.haskell.compiler.ghc96
       pkgs.haskell-language-server
       pkgs.haskellPackages.hoogle
+      pkgs.nasm
     ];
   }
