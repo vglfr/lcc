@@ -11,7 +11,7 @@ data Exp
 
 instance Show Exp where
   showsPrec n e = case e of
-                    Abs h b -> showParen (n > 1) $ showString "λ" . shows h . showString "." . showsPrec 1 b
+                    Abs h b -> showParen (n > 1) $ shows h . showString "." . showsPrec 1 b
                     App f x -> showParen (n > 2) $ showsPrec 2 f . showSpace . showsPrec 2 x
                     Var x -> showString x
   -- showsPrec _ (Var x)   = showString x
@@ -32,15 +32,3 @@ instance IsString Exp where
 
 (∘) :: Exp -> Exp -> Exp
 (∘) = App
-
-{-
-5 * (5 * 5) -> 5 * 5 * 5
-
-  *                  *
- / \                / \
-5   *       ->     *   5
-   / \            / \
-  5   5          5   5
--}
-rectify :: Exp -> Exp
-rectify = undefined

@@ -33,7 +33,7 @@ instance Show Block where
   show (Text is) = intercalate "\n" (fmap offseti is)
 
 x86 :: Spool IR -> Spool X86
-x86 (Spool n ls) = Spool n
+x86 (Spool ls) = Spool
   [
     Global "_start"
   , Section ".data" data'

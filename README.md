@@ -3,10 +3,12 @@
 + data types + basic examples
 + first order functions
 
-- spooler
+- spool
+
 - partial functions
+- register arguments
 - rectify associativity
-- typechecker
+- typecheck
 - function type
 
 - refactor Show for AST
