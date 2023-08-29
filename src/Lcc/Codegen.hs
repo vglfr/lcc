@@ -44,11 +44,17 @@ x86 (Spool n ls) = Spool n
   label l = case l of
              Proc k is -> Label ('_' : show k) $ procedure is
              Start is -> Label "_start" $ start is
-  procedure is = intercalate (pure mempty) $ concatMap instr is : pure ret
+  procedure is = intercalate (pure mempty) $ enter : concatMap instr is : pure leave
   start is = intercalate (pure mempty) $ concatMap instr is : [result, write, exit]
-  ret =
+  enter =
+    [
+      "push    rbp"
+    , "mov     rbp, rsp"
+    ]
+  leave =
     [
       "pop     rax"
+    , "pop     rbp"
     , "ret"
     ]
   result =
@@ -82,7 +88,7 @@ instr i = case i of
   loa d = case d of
             Val c -> "0x" <> showHex (fromEnum c) mempty
             Ref r -> "_" <> show r
-            Arg a -> "qword [rsp+" <> show (16 + a*8) <> "]"
+            Arg a -> "qword [rbp+" <> show (24 + a*8) <> "]"
             Ret -> "rax"
 
 offseti :: String -> String
@@ -92,7 +98,7 @@ run' :: Spool IR -> IO ()
 run' s = do
   let a = x86 s
   print a
-  writeFile ("/tmp/lcc.s") $ show a
+  writeFile "/tmp/lcc.s" $ show a
   readProcess "nasm" ["-g", "-f", "elf64", "/tmp/lcc.s", "-o", "/tmp/lcc.o"] mempty >>= putStrLn
   readProcess "ld" ["/tmp/lcc.o", "-o", "/tmp/a.out"] mempty >>= putStrLn
   readProcess "/tmp/a.out" mempty mempty >>= putStrLn

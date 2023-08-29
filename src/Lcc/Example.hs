@@ -248,17 +248,17 @@ i8 = Spool "a8"
  / \     / \          / \     / \
 v   u   v  u         1   1   1   1
 
-  λxy.xy (λuv.u k) z
-  λxy.xy (λ v.k  ) z
-  λ y.(λv.k)y z
-       λv.k z
-          k
+  xy.xy (uv.u k) z
+  xy.xy ( v.k  ) z
+   y.(v.k)y z
+      v.k z
+        k
 
-  λxy.xy λuv.u k z
-  λ y.(λuv.u)y k z
-  λuv.u k z
-  λ v.k z
-      k
+  xy.xy uv.u k z
+   y.(uv.u)y k z
+  uv.u k z
+   v.k z
+     k
 -}
 a9 :: Exp
 a9 = λ "x" (λ "y" ("x" ∘ "y")) ∘ λ "u" (λ "v" "u") ∘ "k" ∘ "z"
@@ -279,21 +279,55 @@ i9 = Spool "a9"
   --   ]
   -- , Start
   --   [
-  --     Loa (Val 'z')
+  --     Loa (Val 'k')
   --   , Loa (Ref 1)
   --   , Loa (Ref 0)
   --   , Cal 3
+  --   , Loa (Val 'z')
+  --   , Loa Ret
+  --   , Cal 2
   --   , Loa Ret
   --   ]
   ]
 
-{- λxy.x(λz.z) λu.u k v -> v -}
+{- xy.x(z.z) u.u k v -> v -}
 {-
-  λxy.x(λz.z) λu.u k v
-  λ y.(λu.u)(λz.z) k v
-      (λu.u)(λz.z)   v
-       λz.z          v
-          v
+  xy.x    (z.z) u.u k v
+   y.(u.u)(z.z) k v
+     (u.u)(z.z)   v
+      z.z         v
+        v
 -}
 a10 :: Exp
 a10 = λ "x" (λ "y" ("x" ∘ λ "z" "z")) ∘ (λ "u"  "u") ∘ "k" ∘ "z"
+
+i10 :: Spool IR
+i10 = Spool "a10"
+  [
+    Proc 0 -- xy.x(z.z)
+    [
+      Loa (Ref 2)
+    , Loa (Arg 0)
+    , Cal 2
+    , Loa Ret
+    ]
+  , Proc 1 -- u.u
+    [
+      Loa (Arg 0)
+    ]
+  , Proc 2 -- z.z
+    [
+      Loa (Arg 0)
+    ]
+  , Start
+    [
+      Loa (Val 'k')
+    , Loa (Ref 1)
+    , Loa (Ref 0)
+    , Cal 3
+    , Loa (Val 'v')
+    , Loa Ret
+    , Cal 2
+    , Loa Ret
+    ]
+  ]
