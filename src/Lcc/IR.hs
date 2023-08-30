@@ -1,8 +1,16 @@
 module Lcc.IR where
 
-import Data.List (intercalate)
+import Prelude hiding (abs)
 
-import Lcc.AST (Exp)
+import Data.List (intercalate, uncons)
+import Data.Maybe (fromJust)
+
+import Lcc.AST
+  (
+    Exp (Abs, App, Var)
+  , abs
+  )
+import Debug.Trace (traceShowId)
 
 newtype Spool a = Spool [a]
 
@@ -40,7 +48,19 @@ instance Show Dat where
   show (Val x) = "'" <> pure x <> "'"
 
 spool :: Exp -> Spool IR
-spool _e = Spool mempty
+spool = Spool . fmap spool' . traceShowId . uncurry (:) . fmap (filter abs) . fromJust . uncons . collapse
+ where
+  collapse :: Exp -> [Exp]
+  collapse e = case e of
+              Abs _ b -> e : collapse b
+              App f x -> e : collapse f <> collapse x
+              Var _ -> pure e
+  spool' :: Exp -> IR
+  spool' = undefined
+  -- spool' e' = case e' of
+  --               Abs _ _ -> undefined
+  --               App _ _ -> undefined
+  --               Var _ -> undefined
 
 {-
 5 * (5 * 5) -> 5 * 5 * 5

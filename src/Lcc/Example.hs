@@ -12,8 +12,11 @@ import Lcc.IR
   )
 
 {- x -> x -}
-a1 :: Exp
-a1 = "x"
+{-
+  x
+-}
+e1 :: Exp
+e1 = "x"
 
 i1 :: Spool IR
 i1 = Spool
@@ -25,8 +28,15 @@ i1 = Spool
   ]
 
 {- λx.x y -> y -}
-a2 :: Exp
-a2 = λ "x" "x" ∘ "y"
+{-
+    @
+   / \
+  λ   y
+ / \
+x   x
+-}
+e2 :: Exp
+e2 = λ "x" "x" ∘ "y"
 
 i2 :: Spool IR
 i2 = Spool
@@ -45,8 +55,15 @@ i2 = Spool
   ]
 
 {- λx.z y -> z -}
-a3 :: Exp
-a3 = λ "x" "z" ∘ "y"
+{-
+    @
+   / \
+  λ   y
+ / \
+x   z
+-}
+e3 :: Exp
+e3 = λ "x" "z" ∘ "y"
 
 i3 :: Spool IR
 i3 = Spool
@@ -76,8 +93,8 @@ i3 = Spool
  / \         / \
 y   x       1   1
 -}
-a4 :: Exp
-a4 = λ "x" (λ "y" "x") ∘ "u" ∘ "v"
+e4 :: Exp
+e4 = λ "x" (λ "y" "x") ∘ "u" ∘ "v"
 
 i4 :: Spool IR
 i4 = Spool
@@ -97,8 +114,19 @@ i4 = Spool
   ]
 
 {- λxy.y u v -> v -}
-a5 :: Exp
-a5 = λ "x" (λ "y" "y") ∘ "u" ∘ "v"
+{-
+        @
+       / \
+      @   v
+     / \
+    λ   u
+   / \
+  λ   x
+ / \
+y   y
+-}
+e5 :: Exp
+e5 = λ "x" (λ "y" "y") ∘ "u" ∘ "v"
 
 i5 :: Spool IR
 i5 = Spool
@@ -127,8 +155,8 @@ i5 = Spool
  / \   / \     / \   / \
 x   x y   y   1   1 1   1
 -}
-a6 :: Exp
-a6 = λ "x" "x" ∘ λ "y" "y" ∘ "z"
+e6 :: Exp
+e6 = λ "x" "x" ∘ λ "y" "y" ∘ "z"
 
 i6 :: Spool IR
 i6 = Spool
@@ -154,8 +182,10 @@ i6 = Spool
   ]
 
 {- λxy.xy λy.y z -> z -}
-a7 :: Exp
-a7 = λ "x" (λ "y" ("x" ∘ "y")) ∘ λ "y" "y" ∘ "z"
+{-
+-}
+e7 :: Exp
+e7 = λ "x" (λ "y" ("x" ∘ "y")) ∘ λ "y" "y" ∘ "z"
 
 i7 :: Spool IR
 i7 = Spool
@@ -207,8 +237,8 @@ x   y   v   u        2   2   1   1
   λ v.k z
       k
 -}
-a8 :: Exp
-a8 = λ "x" (λ "y" ("x" ∘ "y")) ∘ (λ "u" (λ "v" "u") ∘ "k") ∘ "z"
+e8 :: Exp
+e8 = λ "x" (λ "y" ("x" ∘ "y")) ∘ (λ "u" (λ "v" "u") ∘ "k") ∘ "z"
 
 i8 :: Spool IR
 i8 = Spool
@@ -260,8 +290,8 @@ v   u   v  u         1   1   1   1
    v.k z
      k
 -}
-a9 :: Exp
-a9 = λ "x" (λ "y" ("x" ∘ "y")) ∘ λ "u" (λ "v" "u") ∘ "k" ∘ "z"
+e9 :: Exp
+e9 = λ "x" (λ "y" ("x" ∘ "y")) ∘ λ "u" (λ "v" "u") ∘ "k" ∘ "z"
 
 i9 :: Spool IR
 i9 = Spool
@@ -298,8 +328,8 @@ i9 = Spool
       z.z         v
         v
 -}
-a10 :: Exp
-a10 = λ "x" (λ "y" ("x" ∘ λ "z" "z")) ∘ (λ "u"  "u") ∘ "k" ∘ "z"
+e10 :: Exp
+e10 = λ "x" (λ "y" ("x" ∘ λ "z" "z")) ∘ (λ "u"  "u") ∘ "k" ∘ "z"
 
 i10 :: Spool IR
 i10 = Spool

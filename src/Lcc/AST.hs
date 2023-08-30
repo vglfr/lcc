@@ -27,6 +27,14 @@ instance Show Exp where
 instance IsString Exp where
   fromString = Var
 
+abs :: Exp -> Bool
+abs (Abs {}) = True
+abs _ = False
+
+-- app :: Exp -> Bool
+-- app (App {}) = True
+-- app _ = False
+
 λ :: Exp -> Exp -> Exp
 λ = Abs
 
