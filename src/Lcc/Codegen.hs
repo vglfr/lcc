@@ -7,9 +7,9 @@ import System.Process (readProcess)
 
 import Lcc.IR
   (
-    Dat (Arg, Ref, Ret, Val)
+    Dat (Con)
   , IR (Proc, Start)
-  , Ins (Cal, Loa)
+  , Ins (End)
   , Spool (Spool)
   )
 
@@ -36,27 +36,28 @@ x86 :: Spool IR -> Spool X86
 x86 (Spool ls) = Spool
   [
     Global "_start"
-  , Section ".data" data'
+  , Section ".bss" bss
   , Section ".text" $ fmap label ls
   ]
  where
-  data' = pure . Text . pure $ "_R:     db 0x0, 0x0"
+  bss = pure . Text . pure $ "_R:     db 2" -- 0x0, 0x0"
   label l = case l of
-             Proc k is -> Label ('_' : show k) $ procedure is
+             Proc s i _ is -> Label ("_" <> show s <> "_" <> show i) $ procedure is
              Start is -> Label "_start" $ start is
-  procedure is = intercalate (pure mempty) $ enter : concatMap instr is : pure leave
+  procedure = undefined
+  -- procedure is = intercalate (pure mempty) $ enter : concatMap instr is : pure leave
   start is = intercalate (pure mempty) $ concatMap instr is : [result, write, exit]
-  enter =
-    [
-      "push    rbp"
-    , "mov     rbp, rsp"
-    ]
-  leave =
-    [
-      "pop     rax"
-    , "pop     rbp"
-    , "ret"
-    ]
+  -- enter =
+  --   [
+  --     "push    rbp"
+  --   , "mov     rbp, rsp"
+  --   ]
+  -- leave =
+  --   [
+  --     "pop     rax"
+  --   , "pop     rbp"
+  --   , "ret"
+  --   ]
   result =
     [
       "pop     word [_R]"
@@ -79,17 +80,20 @@ x86 (Spool ls) = Spool
 
 instr :: Ins -> [Line]
 instr i = case i of
-            Loa d -> pure $ "push    " <> loa d
-            Cal n -> [
-                       "call    [rsp]"
-                     , "add     rsp, " <> show (n * 8)
-                     ]
+            -- Cal -> [
+            --          "call    [rsp]"
+            --        , "add     rsp, " <> show (0 * 8)
+            --        ]
+            End d -> pure $ "push    " <> loa d
+            _ -> undefined
  where
   loa d = case d of
-            Val c -> "0x" <> showHex (fromEnum c) mempty
-            Ref r -> "_" <> show r
-            Arg a -> "qword [rbp+" <> show (24 + a*8) <> "]"
-            Ret -> "rax"
+            Con c -> "0x" <> showHex (fromEnum c) mempty
+            _ -> undefined
+            -- Arg a -> "qword [rbp+" <> show (24 + a*8) <> "]"
+            -- Val c -> "0x" <> showHex (fromEnum c) mempty
+            -- Ref r -> "_" <> show r
+            -- Ret -> "rax"
 
 offseti :: String -> String
 offseti s = if null s || last s == ':' then s else replicate 8 ' ' <> s

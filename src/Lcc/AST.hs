@@ -11,11 +11,11 @@ data Exp
   | Var String
   deriving Eq
 
-data Exp'
-  = Abs' Name [Exp'] Exp'
-  | App' Exp' [Exp']
-  | Var' Char
-  deriving (Eq, Show)
+-- data Exp'
+--   = Abs' Name [Exp'] Exp'
+--   | App' Exp' [Exp']
+--   | Var' Char
+--   deriving (Eq, Show)
 
 type Name = Int
 
@@ -37,14 +37,14 @@ instance Show Exp where
 instance IsString Exp where
   fromString = Var
 
-collapse :: Exp -> Exp'
-collapse = go 0
- where
-  go :: Int -> Exp -> Exp'
-  go n e = case e of
-             Abs h b -> Abs' n [go n h] (go (n+1) b)
-             App f x -> App' (go n f) [go n x]
-             Var v -> Var' $ head v
+-- collapse :: Exp -> Exp'
+-- collapse = go 0
+--  where
+--   go :: Int -> Exp -> Exp'
+--   go n e = case e of
+--              Abs h b -> Abs' n [go n h] (go (n+1) b)
+--              App f x -> App' (go n f) [go n x]
+--              Var v -> Var' $ head v
 
 -- lift :: Exp -> Exp
 -- lift = undefined
