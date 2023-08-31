@@ -4,6 +4,9 @@
 + first order functions
 
 - spool
+  - zipper
+  - lambda lifting (LL)
+  - LL optimizations
 
 - partial functions
 - register arguments

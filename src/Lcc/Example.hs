@@ -2,7 +2,12 @@
 
 module Lcc.Example where
 
-import Lcc.AST (λ, (∘), Exp)
+import Lcc.AST
+  (
+    λ, (∘)
+  , Exp
+  , Exp' (Abs', App', Var')
+  )
 import Lcc.IR
   (
     Dat (Arg, Ref, Ret, Val)
@@ -17,6 +22,9 @@ import Lcc.IR
 -}
 e1 :: Exp
 e1 = "x"
+
+e1' :: Exp'
+e1' = Var' 'x'
 
 i1 :: Spool IR
 i1 = Spool
@@ -37,6 +45,9 @@ x   x
 -}
 e2 :: Exp
 e2 = λ "x" "x" ∘ "y"
+
+e2' :: Exp'
+e2' = App' (Abs' 0 [Var' 'x'] $ Var' 'x') [Var' 'y']
 
 i2 :: Spool IR
 i2 = Spool
@@ -64,6 +75,9 @@ x   z
 -}
 e3 :: Exp
 e3 = λ "x" "z" ∘ "y"
+
+e3' :: Exp'
+e3' = App' (Abs' 0 [Var' 'x'] $ Var' 'z') [Var' 'y']
 
 i3 :: Spool IR
 i3 = Spool
@@ -161,17 +175,13 @@ e6 = λ "x" "x" ∘ λ "y" "y" ∘ "z"
 i6 :: Spool IR
 i6 = Spool
   [
-    Proc 0 -- λx.x
-    [
-      Loa (Arg 0)
-    ]
-  , Proc 1 -- λy.y
+    Proc 0 -- x.x and y.y
     [
       Loa (Arg 0)
     ]
   , Start
     [
-      Loa (Ref 1)
+      Loa (Ref 0)
     , Loa (Ref 0)
     , Cal 2
     , Loa (Val 'z')
@@ -243,25 +253,25 @@ e8 = λ "x" (λ "y" ("x" ∘ "y")) ∘ (λ "u" (λ "v" "u") ∘ "k") ∘ "z"
 i8 :: Spool IR
 i8 = Spool
   [
-  --   Proc 0 -- λxy.xy
-  --   [
-  --     Loa (Arg 1)
-  --   , Loa (Arg 0)
-  --   , Cal 2
-  --   , Loa Ret
-  --   ]
-  -- , Proc 1 -- λuv.u
-  --   [
-  --     Loa (Arg 0)
-  --   ]
-  -- , Start
-  --   [
-  --     Loa (Val 'z')
-  --   , Loa (Ref 1)
-  --   , Loa (Ref 0)
-  --   , Cal 3
-  --   , Loa Ret
-  --   ]
+    Proc 0 -- xy.xy
+    [
+      Loa (Arg 1)
+    , Loa (Arg 0)
+    , Cal 2
+    , Loa Ret
+    ]
+  , Proc 1 -- uv.u k == v.k
+    [
+      Loa (Val 'k')
+    ]
+  , Start
+    [
+      Loa (Val 'z')
+    , Loa (Ref 1)
+    , Loa (Ref 0)
+    , Cal 3
+    , Loa Ret
+    ]
   ]
 
 {- λxy.xy λuv.u k z -> k -}
@@ -296,28 +306,25 @@ e9 = λ "x" (λ "y" ("x" ∘ "y")) ∘ λ "u" (λ "v" "u") ∘ "k" ∘ "z"
 i9 :: Spool IR
 i9 = Spool
   [
-  --   Proc 0
-  --   [
-  --     Loa (Arg 1)
-  --   , Loa (Arg 0)
-  --   , Cal 2
-  --   , Loa Ret
-  --   ]
-  -- , Proc 1
-  --   [
-  --     Loa (Arg 0)
-  --   ]
-  -- , Start
-  --   [
-  --     Loa (Val 'k')
-  --   , Loa (Ref 1)
-  --   , Loa (Ref 0)
-  --   , Cal 3
-  --   , Loa (Val 'z')
-  --   , Loa Ret
-  --   , Cal 2
-  --   , Loa Ret
-  --   ]
+    Proc 0 -- xy.xy
+    [
+      Loa (Arg 1)
+    , Loa (Arg 0)
+    , Cal 2
+    , Loa Ret
+    ]
+  , Proc 1 -- uv.u k == v.k
+    [
+      Loa (Val 'k')
+    ]
+  , Start
+    [
+      Loa (Val 'k')
+    , Loa (Ref 1)
+    , Loa (Ref 0)
+    , Cal 3
+    , Loa Ret
+    ]
   ]
 
 {- xy.x(z.z) u.u k v -> v -}
@@ -336,16 +343,12 @@ i10 = Spool
   [
     Proc 0 -- xy.x(z.z)
     [
-      Loa (Ref 2)
+      Loa (Ref 1)
     , Loa (Arg 0)
     , Cal 2
     , Loa Ret
     ]
-  , Proc 1 -- u.u
-    [
-      Loa (Arg 0)
-    ]
-  , Proc 2 -- z.z
+  , Proc 1 -- u.u and z.z
     [
       Loa (Arg 0)
     ]

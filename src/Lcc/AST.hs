@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-incomplete-patterns #-}
+
 module Lcc.AST where
 
 import Data.String (IsString, fromString)
@@ -8,6 +10,14 @@ data Exp
   | App Exp Exp
   | Var String
   deriving Eq
+
+data Exp'
+  = Abs' Name [Exp'] Exp'
+  | App' Exp' [Exp']
+  | Var' Char
+  deriving (Eq, Show)
+
+type Name = Int
 
 instance Show Exp where
   showsPrec n e = case e of
@@ -27,13 +37,29 @@ instance Show Exp where
 instance IsString Exp where
   fromString = Var
 
-abs :: Exp -> Bool
-abs (Abs {}) = True
-abs _ = False
+collapse :: Exp -> Exp'
+collapse = go 0
+ where
+  go :: Int -> Exp -> Exp'
+  go n e = case e of
+             Abs h b -> Abs' n [go n h] (go (n+1) b)
+             App f x -> App' (go n f) [go n x]
+             Var v -> Var' $ head v
 
--- app :: Exp -> Bool
--- app (App {}) = True
--- app _ = False
+-- lift :: Exp -> Exp
+-- lift = undefined
+
+{-
+5 * (5 * 5) -> 5 * 5 * 5
+
+  *                  *
+ / \                / \
+5   *       ->     *   5
+   / \            / \
+  5   5          5   5
+-}
+-- leftify :: Exp -> Exp
+-- leftify = undefined
 
 λ :: Exp -> Exp -> Exp
 λ = Abs
