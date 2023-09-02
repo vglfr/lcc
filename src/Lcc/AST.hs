@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -Wno-incomplete-patterns #-}
+-- {-# OPTIONS_GHC -Wno-incomplete-patterns #-}
 
 module Lcc.AST where
 
@@ -9,21 +9,26 @@ data Exp
   = Abs Exp Exp
   | App Exp Exp
   | Var String
-  deriving Eq
+  -- deriving Eq
 
--- data Exp'
---   = Abs' Name [Exp'] Exp'
---   | App' Exp' [Exp']
---   | Var' Char
---   deriving (Eq, Show)
+data Exp'
+  = Abs' Name Name Exp' Exp'
+  | App' Name Name Exp' Exp'
+  | Bin' Name Name
+  | Unb' Char
+  deriving Show
+  -- deriving (Eq, Show)
 
 type Name = Int
 
 instance Show Exp where
   showsPrec n e = case e of
-                    Abs h b -> showParen (n > 1) $ shows h . showString "." . showsPrec 1 b
-                    App f x -> showParen (n > 2) $ showsPrec 2 f . showSpace . showsPrec 2 x
+                    Abs h b -> showParen (n > 2) $ shows h . showDot b . showsPrec 2 b
+                    App f x -> showParen (n > 2) $ showsPrec 2 f . showSpace . showsPrec 3 x
                     Var x -> showString x
+   where
+    showDot (Abs {}) = showString ""
+    showDot _ = showString "."
   -- showsPrec _ (Var x)   = showString x
   -- showsPrec _ (Abs h b) = showString "λ" . shows h . showAbs b
   --  where
@@ -36,6 +41,10 @@ instance Show Exp where
 
 instance IsString Exp where
   fromString = Var
+
+-- enumerate functions & arities
+-- enumerate variables
+-- enumerate applications when need to be labeled
 
 -- collapse :: Exp -> Exp'
 -- collapse = go 0

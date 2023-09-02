@@ -6,7 +6,7 @@ import Lcc.AST
   (
     λ, (∘)
   , Exp
-  -- , Exp' (Abs', App', Var')
+  , Exp' (Abs', App', Bin', Unb')
   )
 import Lcc.IR
   (
@@ -23,8 +23,8 @@ import Lcc.IR
 e1 :: Exp
 e1 = "x"
 
--- e1' :: Exp'
--- e1' = Var' 'x'
+e1' :: Exp'
+e1' = Unb' 'x'
 
 i1 :: Spool IR
 i1 = Spool
@@ -46,8 +46,10 @@ x   x
 e2 :: Exp
 e2 = λ "x" "x" ∘ "y"
 
--- e2' :: Exp'
--- e2' = App' (Abs' 0 [Var' 'x'] $ Var' 'x') [Var' 'y']
+e2' :: Exp'
+e2' = App' 0 0
+        (Abs' 0 1 (Bin' 0 1) (Bin' 0 1))
+        (Unb' 'y')
 
 i2 :: Spool IR
 i2 = Spool
@@ -74,8 +76,10 @@ x   z
 e3 :: Exp
 e3 = λ "x" "z" ∘ "y"
 
--- e3' :: Exp'
--- e3' = App' (Abs' 0 [Var' 'x'] $ Var' 'z') [Var' 'y']
+e3' :: Exp'
+e3' = App' 0 0
+        (Abs' 0 1 (Bin' 0 1) (Unb' 'z'))
+        (Unb' 'y')
 
 i3 :: Spool IR
 i3 = Spool
@@ -99,12 +103,19 @@ i3 = Spool
      / \         / \
     λ   u      (2)  2
    / \         / \
-  λ   x       1   1
- / \         / \
-y   x       1   1
+  x   λ       1   1
+     / \         / \
+    y   x       1   1
 -}
 e4 :: Exp
 e4 = λ "x" (λ "y" "x") ∘ "u" ∘ "v"
+
+e4' :: Exp'
+e4' = App' 0 0
+        (App' 0 0
+          (Abs' 0 2 (Bin' 0 2) (Abs' 0 1 (Bin' 0 1) (Bin' 0 2)))
+          (Unb' 'u'))
+        (Unb' 'v')
 
 i4 :: Spool IR
 i4 = Spool
@@ -141,6 +152,13 @@ y   y
 e5 :: Exp
 e5 = λ "x" (λ "y" "y") ∘ "u" ∘ "v"
 
+e5' :: Exp'
+e5' = App' 0 0
+        (App' 0 0
+          (Abs' 0 2 (Bin' 0 2) (Abs' 0 1 (Bin' 0 1) (Bin' 0 1)))
+          (Unb' 'u'))
+        (Unb' 'v')
+
 i5 :: Spool IR
 i5 = Spool
   [
@@ -174,6 +192,13 @@ x   x y   y   1   1 1   1
 e6 :: Exp
 e6 = λ "x" "x" ∘ λ "y" "y" ∘ "z"
 
+e6' :: Exp'
+e6' = App' 0 0
+        (App' 0 0
+          (Abs' 0 1 (Bin' 0 1) (Bin' 0 1))
+          (Abs' 1 1 (Bin' 1 1) (Bin' 1 1)))
+        (Unb' 'z')
+
 i6 :: Spool IR
 i6 = Spool
   [
@@ -196,6 +221,17 @@ i6 = Spool
 {- xy.xy y.y z -> z -}
 e7 :: Exp
 e7 = λ "x" (λ "y" ("x" ∘ "y")) ∘ λ "y" "y" ∘ "z"
+
+e7' :: Exp'
+e7' = App' 0 0
+        (App' 0 0
+          (Abs' 0 2 (Bin' 0 1)
+            (Abs' 0 1 (Bin' 0 1)
+              (App' 0 0
+                (Bin' 0 2)
+                (Bin' 0 1))))
+          (Abs' 1 1 (Bin' 1 1) (Bin' 1 1)))
+        (Unb' 'z')
 
 i7 :: Spool IR
 i7 = Spool
@@ -244,6 +280,17 @@ x   y   v   u        2   2   1   1
 -}
 e8 :: Exp
 e8 = λ "x" (λ "y" ("x" ∘ "y")) ∘ (λ "u" (λ "v" "u") ∘ "k") ∘ "z"
+
+-- e8' :: Exp'
+-- e8' = App' 0 0
+--         (App' 0 0
+--           (Abs' 0 2 (Bin' 0 1)
+--             (Abs' 0 1 (Bin' 0 1)
+--               (App' 0 0
+--                 (Bin' 0 2)
+--                 (Bin' 0 1))))
+--           (Abs' 1 1 (Bin' 1 1) (Bin' 1 1)))
+--         (Unb' 'z')
 
 i8 :: Spool IR
 i8 = Spool

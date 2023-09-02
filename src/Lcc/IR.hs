@@ -33,6 +33,8 @@ instance Show IR where
   show (Start is) = intercalate "\n" $ "start:" : fmap (offset 2 . show) is
   show (Proc s i is) = intercalate "\n" $ show s <> "_" <> show i <> ":" : fmap (offset 2 . show) is
 
+-- Unb' -> Con
+
 -- spool :: Exp' -> Spool IR
 -- spool e = let (s, ps) = traceShowId . fromJust . uncons . flatten $ e
 --            in Spool $ spools s : fmap spoolp (filter abs ps)
