@@ -1,7 +1,8 @@
--- {-# OPTIONS_GHC -Wno-incomplete-patterns #-}
+{-# LANGUAGE LambdaCase #-}
 
 module Lcc.AST where
 
+import Data.Function (applyWhen)
 import Data.String (IsString, fromString)
 import GHC.Show (showSpace)
 
@@ -9,45 +10,26 @@ data Exp
   = Abs Exp Exp
   | App Exp Exp
   | Var String
-  -- deriving Eq
 
 data Exp'
   = Abs' Name Name Exp' Exp'
   | App' Name Name Exp' Exp'
   | Bin' Name Name
   | Unb' Char
-  deriving Show
-  -- deriving (Eq, Show)
 
 type Name = Int
 
 instance Show Exp where
-  showsPrec n e = case e of
-                    Abs h b -> showParen (n > 2) $ shows h . showDot b . showsPrec 2 b
-                    App f x -> showParen (n > 2) $ showsPrec 2 f . showSpace . showsPrec 3 x
-                    Var x -> showString x
-   where
-    showDot (Abs {}) = showString ""
-    showDot _ = showString "."
-  -- showsPrec _ (Var x)   = showString x
-  -- showsPrec _ (Abs h b) = showString "λ" . shows h . showAbs b
-  --  where
-  --   showAbs (Abs h' b') = shows h' . showAbs b'
-  --   showAbs e           = showString "." . showInner e
-  --   showInner e@(Abs _ _) = showParen True $ shows e
-  --   showInner (App f x)   = showInner f . showInner x
-  --   showInner e           = shows e
-  -- showsPrec _ (App f x) = shows f . showSpace . shows x
+  showsPrec n e = showsPrec' n (disc' e) e
+
+instance Show Exp' where
+  show = undefined
 
 instance IsString Exp where
   fromString = Var
 
--- enumerate functions & arities
--- enumerate variables
--- enumerate applications when need to be labeled
-
--- collapse :: Exp -> Exp'
--- collapse = go 0
+-- enrich :: Exp -> Exp'
+-- enrich = go 0
 --  where
 --   go :: Int -> Exp -> Exp'
 --   go n e = case e of
@@ -55,23 +37,20 @@ instance IsString Exp where
 --              App f x -> App' (go n f) [go n x]
 --              Var v -> Var' $ head v
 
--- lift :: Exp -> Exp
--- lift = undefined
-
-{-
-5 * (5 * 5) -> 5 * 5 * 5
-
-  *                  *
- / \                / \
-5   *       ->     *   5
-   / \            / \
-  5   5          5   5
--}
--- leftify :: Exp -> Exp
--- leftify = undefined
-
 λ :: Exp -> Exp -> Exp
 λ = Abs
 
 (∘) :: Exp -> Exp -> Exp
 (∘) = App
+
+disc' :: Exp -> Int
+disc' = \case
+          Abs {} -> 0
+          App {} -> 1
+          Var {} -> 2
+
+showsPrec' :: Int -> Int -> Exp -> ShowS
+showsPrec' n p = \case
+                   Abs h b -> showParen (n > 2) $ shows h . applyWhen (disc' b /= 0) (showString ".") . showsPrec' 1 0 b
+                   App f x -> showParen (n > 1) $ showsPrec' 1 1 f . applyWhen (p == 1) showSpace . (showParen (disc' x == 0 && p == 0) $ showsPrec' 2 1 x)
+                   Var x -> showString x
