@@ -7,9 +7,9 @@ import System.Process (readProcess)
 
 import Lcc.IR
   (
-    Dat (Con)
+    Dat (Bin, Con, Ref, Ret, Unb)
   , IR (Proc, Start)
-  , Ins (End)
+  , Ins (Cal, End, Sav)
   , Spool (Spool)
   )
 
@@ -40,34 +40,22 @@ x86 (Spool ls) = Spool
   , Section ".text" $ fmap label ls
   ]
  where
-  bss = pure . Text . pure $ "_R:     db 2" -- 0x0, 0x0"
+  bss = pure . Text $ "R:      resb 2" : (filter (not . null) $ fmap unbinded ls)
   label l = case l of
-             Proc s i _ is -> Label ("_" <> show s <> "_" <> show i) $ procedure is
+             Proc s i is -> Label ("_" <> show s <> "_" <> show i) $ procedure is
              Start is -> Label "_start" $ start is
-  procedure = undefined
-  -- procedure is = intercalate (pure mempty) $ enter : concatMap instr is : pure leave
+  procedure = (<> pure "ret") . concatMap instr
   start is = intercalate (pure mempty) $ concatMap instr is : [result, write, exit]
-  -- enter =
-  --   [
-  --     "push    rbp"
-  --   , "mov     rbp, rsp"
-  --   ]
-  -- leave =
-  --   [
-  --     "pop     rax"
-  --   , "pop     rbp"
-  --   , "ret"
-  --   ]
   result =
     [
-      "pop     word [_R]"
-    , "mov     byte [_R+1], 0x0A"
+      "mov     [R], rax"
+    , "mov     byte [R+1], 0x0A"
     ]
   write =
     [
       "mov     rax, 1"
     , "mov     rdi, 1"
-    , "mov     rsi, _R"
+    , "mov     rsi, R"
     , "mov     rdx, 2"
     , "syscall"
     ]
@@ -77,23 +65,27 @@ x86 (Spool ls) = Spool
     , "xor     rdi, rdi"
     , "syscall"
     ]
+  unbinded (Proc n a _) = if a > 1 then "U" <> show n <> "_" <> show (a - 2) <> ":   resq 1" else mempty
+  unbinded _ = mempty
 
 instr :: Ins -> [Line]
 instr i = case i of
-            -- Cal -> [
-            --          "call    [rsp]"
-            --        , "add     rsp, " <> show (0 * 8)
-            --        ]
-            End d -> pure $ "push    " <> loa d
-            _ -> undefined
+            Cal f x -> [
+                         "mov     rsi, " <> loa x
+                       , "mov     rdi, " <> loa f
+                       , "call    rdi"
+                       ]
+            End d -> if ret d then mempty else pure $ "mov     rax, " <> loa d
+            Sav u -> pure $ "mov     " <> loa u <> ", rsi"
  where
   loa d = case d of
+            Bin -> "rsi"
             Con c -> "0x" <> showHex (fromEnum c) mempty
-            _ -> undefined
-            -- Arg a -> "qword [rbp+" <> show (24 + a*8) <> "]"
-            -- Val c -> "0x" <> showHex (fromEnum c) mempty
-            -- Ref r -> "_" <> show r
-            -- Ret -> "rax"
+            Ref l a -> "_" <> show l <> "_" <> show a
+            Ret -> "rax"
+            Unb l u -> "[U" <> show l <> "_" <> show u <> "]"
+  ret Ret = True
+  ret _ = False
 
 offseti :: String -> String
 offseti s = if null s || last s == ':' then s else replicate 8 ' ' <> s

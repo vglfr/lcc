@@ -7,7 +7,7 @@ newtype Spool a = Spool [a] deriving Eq
 
 data IR
   = Start [Ins]
-  | Proc Label Arity NFree [Ins]
+  | Proc Label Arity [Ins]
 
 data Ins
   = Cal Dat Dat
@@ -20,19 +20,18 @@ data Dat
   | Con Char
   | Ref Int Int
   | Ret
-  | Unb Int
+  | Unb Int Int
   deriving Show
 
 type Arity = Int
 type Label = Int
-type NFree = Int
 
 instance Show a => Show (Spool a) where
   show (Spool as) = intercalate "\n\n" $ fmap show as
 
 instance Show IR where
   show (Start is) = intercalate "\n" $ "start:" : fmap (offset 2 . show) is
-  show (Proc s i _ is) = intercalate "\n" $ show s <> "_" <> show i <> ":" : fmap (offset 2 . show) is
+  show (Proc s i is) = intercalate "\n" $ show s <> "_" <> show i <> ":" : fmap (offset 2 . show) is
 
 -- spool :: Exp' -> Spool IR
 -- spool e = let (s, ps) = traceShowId . fromJust . uncons . flatten $ e
