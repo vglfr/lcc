@@ -16,26 +16,30 @@ data Exp'
   | App' Name Name Exp' Exp'
   | Bin' Name Name
   | Unb' Char
+  deriving Show
 
 type Name = Int
 
 instance Show Exp where
   showsPrec n e = showsPrec' n (disc' e) e
 
-instance Show Exp' where
-  show = undefined
+-- instance Show Exp' where
+--   show = undefined
 
 instance IsString Exp where
   fromString = Var
 
--- enrich :: Exp -> Exp'
--- enrich = go 0
---  where
---   go :: Int -> Exp -> Exp'
---   go n e = case e of
---              Abs h b -> Abs' n [go n h] (go (n+1) b)
---              App f x -> App' (go n f) [go n x]
---              Var v -> Var' $ head v
+-- convert to Exp'
+-- name functions & assign arities
+-- rename binded variables
+enrich :: Exp -> Exp'
+enrich = go 0
+ where
+  go :: Int -> Exp -> Exp'
+  go n e = case e of
+             Abs _h b -> Abs' n 1 (Bin' n n) (go (n+1) b)
+             App f x -> App' n 0 (go (n+1) f) (go (n+1) x)
+             Var v -> Unb' $ head v
 
 λ :: Exp -> Exp -> Exp
 λ = Abs

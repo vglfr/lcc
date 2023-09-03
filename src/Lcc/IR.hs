@@ -1,7 +1,14 @@
+{-# LANGUAGE LambdaCase #-}
+
 module Lcc.IR where
 
 import Prelude hiding (abs)
 import Data.List (intercalate)
+
+import Lcc.AST
+  (
+    Exp' (Abs', App', Bin', Unb')
+  )
 
 newtype Spool a = Spool [a] deriving Eq
 
@@ -33,32 +40,44 @@ instance Show IR where
   show (Start is) = intercalate "\n" $ "start:" : fmap (offset 2 . show) is
   show (Proc s i is) = intercalate "\n" $ show s <> "_" <> show i <> ":" : fmap (offset 2 . show) is
 
--- Unb' -> Con
+spool :: Exp' -> Spool IR
+spool e = let ps = flatten e
+           in Spool $ spools e : fmap spoolp ps
+ where
+  flatten e' = case e' of
+                 Abs' _ _ _ b -> e' : flatten b
+                 App' _ a f x
+                   | a > 0 -> e' : flatten f <> flatten x
+                   | otherwise -> flatten f <> flatten x
+                 _ -> mempty
 
--- spool :: Exp' -> Spool IR
--- spool e = let (s, ps) = traceShowId . fromJust . uncons . flatten $ e
---            in Spool $ spools s : fmap spoolp (filter abs ps)
---  where
---   -- flatten :: Exp' -> [Exp']
---   flatten e' = case e' of
---               Abs' _ _ b -> e' : flatten b
---               App' f xs -> e' : flatten f <> concatMap flatten xs
---               Var' _ -> pure e'
+  -- spools :: Exp' -> IR
+  spools e' = Start $ spool' e <> end e'
 
---   -- spools :: Exp' -> IR
---   spools = Start . spool'
+  -- spoolp :: Exp' -> IR
+  spoolp e'@(Abs' l a _ _) = Proc l a $ spool' e'
+  spoolp _ = undefined
 
---   -- spoolp :: Exp' -> IR
---   spoolp (Abs' n _ _) = Proc n n n [Loa $ Arg 0]
+  -- spool' :: Exp' -> [Ins]
+  spool' = \case
+             Abs' _ _ _ b -> spool' b
+             App' _ _ f x -> pure $ Cal (dat f) (dat x)
+             Bin' l a
+               | a == 1 -> pure $ End Bin
+               | otherwise -> pure $ End $ dat (Bin' l a)
+             Unb' c -> pure $ End $ Con c
 
---   -- spool' :: Exp' -> [Ins]
---   spool' e' = case e' of
---                Abs' _ _ b -> spool' b
---                App' (Abs' n as _) xs -> concatMap spool' xs <> [Loa $ Ref n, Cal $ length as + 1, Loa Ret]
---                Var' c -> [Loa . Val $ c]
+  -- dat :: Exp' -> Dat
+  dat = \case
+          Abs' l a _ _ -> Ref l a
+          App' l a _ _ -> Ref l a
+          Bin' l a -> Ref l a
+          Unb' c -> Con c
 
---   abs (Abs' {}) = True
---   abs _ = False
+  -- end :: Exp' -> [Ins]
+  end = \case
+          Unb' c -> [End $ Con c]
+          _ -> [End Ret]
 
 offset :: Int -> String -> String
 offset n s = replicate n ' ' <> s
