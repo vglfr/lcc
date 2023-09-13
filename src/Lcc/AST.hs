@@ -1,5 +1,3 @@
-{-# OPTIONS_GHC -Wno-missing-methods #-}
-
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE TemplateHaskell #-}
 
@@ -19,7 +17,7 @@ data Exp
   | Var String
 
 data Exp'
-  = Abs' Name Exp' Exp'
+  = Abs' Name Exp'
   | App' Name Name Exp' Exp'
   | Bin' Name
   | Unb' Char
@@ -31,9 +29,6 @@ patterns ''Exp
 
 instance Show Exp where
   showsPrec n e = showsPrec' n (disc' e) e
-
-instance Num Exp' where
-  fromInteger = Bin' . fromInteger
 
 -- instance Show Exp' where
 --   show = undefined
@@ -49,7 +44,7 @@ enrich = go 0
  where
   go :: Int -> Exp -> Exp'
   go n e = case e of
-             Abs _h b -> Abs' n (Bin' n) (go (n+1) b)
+             Abs _ b -> Abs' n (go (n+1) b)
              App f x -> App' n 0 (go (n+1) f) (go (n+1) x)
              Var v -> Unb' $ head v
 

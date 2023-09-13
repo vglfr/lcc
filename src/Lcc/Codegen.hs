@@ -7,7 +7,7 @@ import System.Process (readProcess)
 
 import Lcc.IR
   (
-    Dat (Bin, Con, Ref, Ret, Unb)
+    Dat (Arg, Bin, Ref, Ret, Unb)
   , IR (Proc, Start)
   , Ins (Cal, End, Sav)
   , Spool (Spool)
@@ -79,11 +79,11 @@ instr i = case i of
             Sav u -> pure $ "mov     " <> loa u <> ", rsi"
  where
   loa d = case d of
-            Bin -> "rsi"
-            Con c -> "0x" <> showHex (fromEnum c) mempty
+            Arg -> "rsi"
+            Bin l -> "[U" <> show l <> "]"
             Ref l -> "_" <> show l
             Ret -> "rax"
-            Unb l -> "[U" <> show l <> "]"
+            Unb c -> "0x" <> showHex (fromEnum c) mempty
   ret Ret = True
   ret _ = False
 

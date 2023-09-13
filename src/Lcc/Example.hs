@@ -6,11 +6,11 @@ import Lcc.AST
   (
     λ, (∘)
   , Exp
-  -- , Exp' (Abs', App', Bin', Unb')
+  , Exp' (Abs', App', Bin', Unb')
   )
 import Lcc.IR
   (
-    Dat (Bin, Con, Ref, Ret, Unb)
+    Dat (Arg, Bin, Ref, Ret, Unb)
   , IR (Start, Proc)
   , Ins (Cal, End, Sav)
   , Spool (Spool)
@@ -23,15 +23,15 @@ import Lcc.IR
 e1 :: Exp
 e1 = "x"
 
--- e1' :: Exp'
--- e1' = Unb' 'x'
+e1' :: Exp'
+e1' = Unb' 'x'
 
 i1 :: Spool IR
 i1 = Spool
   [
     Start
     [
-      End (Con 'x')
+      End (Unb 'x')
     ]
   ]
 
@@ -46,21 +46,21 @@ x   x
 e2 :: Exp
 e2 = λ "x" "x" ∘ "y"
 
--- e2' :: Exp'
--- e2' = App' 0 0
---         (Abs' 1 1 1)
---         (Unb' 'y')
+e2' :: Exp'
+e2' = App' 0 0
+        (Abs' 1 (Bin' 1))
+        (Unb' 'y')
 
 i2 :: Spool IR
 i2 = Spool
   [
     Proc 1 -- x.x
     [
-      End Bin
+      End Arg
     ]
   , Start
     [
-      Cal (Ref 1) (Con 'y')
+      Cal (Ref 1) (Unb 'y')
     , End Ret
     ]
   ]
@@ -76,105 +76,105 @@ x   z
 e3 :: Exp
 e3 = λ "x" "z" ∘ "y"
 
--- e3' :: Exp'
--- e3' = App' 0 0
---         (Abs' 1 1 (Unb' 'z'))
---         (Unb' 'y')
+e3' :: Exp'
+e3' = App' 0 0
+        (Abs' 1 (Unb' 'z'))
+        (Unb' 'y')
 
 i3 :: Spool IR
 i3 = Spool
   [
     Proc 1 -- x.z
     [
-      End (Con 'z')
+      End (Unb 'z')
     ]
   , Start
     [
-      Cal (Ref 1) (Con 'y')
+      Cal (Ref 1) (Unb 'y')
     , End Ret
     ]
   ]
 
 {- xy.x u v -> u -}
 {-
-        @           0
-       / \         / \
-      @   v       2   2
+      @           0
      / \         / \
-    λ   u      (2)  2
+    @   v       2   2
    / \         / \
-  x   λ       1   1
-     / \         / \
-    y   x       1   1
+  λ   u      (2)  2
+ / \         / \
+x   λ       1   1
+   / \         / \
+  y   x       1   1
 -}
 e4 :: Exp
 e4 = λ "x" (λ "y" "x") ∘ "u" ∘ "v"
 
--- e4' :: Exp'
--- e4' = App' 0 0
---         (App' 0 0
---           (Abs' 1 2 (Bin' 1 2) (Abs' 1 1 (Bin' 1 1) (Bin' 1 2)))
---           (Unb' 'u'))
---         (Unb' 'v')
+e4' :: Exp'
+e4' = App' 0 0
+        (App' 0 0
+          (Abs' 1 (Abs' 2 (Bin' 1)))
+          (Unb' 'u'))
+        (Unb' 'v')
 
 i4 :: Spool IR
 i4 = Spool
   [
     Proc 1 -- xy.x
     [
-      Sav (Unb 1)
+      Sav (Bin 1)
     , End (Ref 2)
     ]
   , Proc 2 -- y.x
     [
-      End (Unb 1)
+      End (Bin 1)
     ]
   , Start
     [
-      Cal (Ref 1) (Con 'u')
-    , Cal Ret (Con 'v')
+      Cal (Ref 1) (Unb 'u')
+    , Cal Ret (Unb 'v')
     , End Ret
     ]
   ]
 
 {- xy.y u v -> v -}
 {-
-        @
-       / \
-      @   v
-     / \
-    λ   u
-   / \
-  λ   x
- / \
-y   y
+      @        @       '2
+     / \      / \      / \
+    @   v    @   v   '1   v
+   / \      / \      / \
+  λ   u    x.  u    1'  u
+ / \       |        |
+x   λ      y.       2'
+   / \     |
+  y   y    y
 -}
 e5 :: Exp
 e5 = λ "x" (λ "y" "y") ∘ "u" ∘ "v"
 
--- e5' :: Exp'
--- e5' = App' 0 0
---         (App' 0 0
---           (Abs' 1 2 (Bin' 1 2) (Abs' 1 1 (Bin' 1 1) (Bin' 1 1)))
---           (Unb' 'u'))
---         (Unb' 'v')
+e5' :: Exp'
+e5' = App' 0 0
+        (App' 0 0
+          (Abs' 1 (Abs' 2 (Bin' 2)))
+          (Unb' 'u'))
+        (Unb' 'v')
 
 i5 :: Spool IR
 i5 = Spool
   [
     Proc 1 -- xy.y
     [
-      Sav (Unb 1)
+      Sav (Bin 1)
     , End (Ref 2)
     ]
   , Proc 2 -- y.y
     [
-      End Bin
+      End Arg
     ]
   , Start
     [
-      Cal (Ref 1) (Con 'u')
-    , Cal Ret (Con 'v')
+      Cal (Ref 1) (Unb 'u')
+    , Cal Ret (Unb 'v')
     , End Ret
     ]
   ]
@@ -192,28 +192,28 @@ x   x y   y   1   1 1   1
 e6 :: Exp
 e6 = λ "x" "x" ∘ λ "y" "y" ∘ "z"
 
--- e6' :: Exp'
--- e6' = App' 0 0
---         (App' 0 0
---           (Abs' 1 1 (Bin' 1 1) (Bin' 1 1))
---           (Abs' 2 1 (Bin' 2 1) (Bin' 2 1)))
---         (Unb' 'z')
+e6' :: Exp'
+e6' = App' 0 0
+        (App' 0 0
+          (Abs' 1 (Bin' 1))
+          (Abs' 2 (Bin' 2)))
+        (Unb' 'z')
 
 i6 :: Spool IR
 i6 = Spool
   [
     Proc 1 -- x.x
     [
-      End Bin
+      End Arg
     ]
   , Proc 2 -- y.y
     [
-      End Bin
+      End Arg
     ]
   , Start
     [
       Cal (Ref 1) (Ref 2)
-    , Cal Ret (Con 'z')
+    , Cal Ret (Unb 'z')
     , End Ret
     ]
   ]
@@ -222,38 +222,38 @@ i6 = Spool
 e7 :: Exp
 e7 = λ "x" (λ "y" ("x" ∘ "y")) ∘ λ "y" "y" ∘ "z"
 
--- e7' :: Exp'
--- e7' = App' 0 0
---         (App' 0 0
---           (Abs' 1 2 (Bin' 1 2)
---             (Abs' 1 1 (Bin' 1 1)
---               (App' 1 0
---                 (Bin' 1 2)
---                 (Bin' 1 1))))
---           (Abs' 2 1 (Bin' 2 1) (Bin' 2 1)))
---         (Unb' 'z')
+e7' :: Exp'
+e7' = App' 0 0
+        (App' 0 0
+          (Abs' 1
+            (Abs' 2
+              (App' 1 0
+                (Bin' 1)
+                (Bin' 2))))
+          (Abs' 3 (Bin' 3)))
+        (Unb' 'z')
 
 i7 :: Spool IR
 i7 = Spool
   [
     Proc 1 -- xy.xy
     [
-      Sav (Unb 1)
+      Sav (Bin 1)
     , End (Ref 2)
     ]
   , Proc 2 -- y.xy
     [
-      Cal (Unb 1) Bin
+      Cal (Bin 1) Arg
     , End Ret
     ]
   , Proc 3 -- y.y
     [
-      End Bin
+      End Arg
     ]
   , Start
     [
       Cal (Ref 1) (Ref 3)
-    , Cal Ret (Con 'z')
+    , Cal Ret (Unb 'z')
     , End Ret
     ]
   ]
@@ -281,53 +281,53 @@ x   y   v   u        2   2   1   1
 e8 :: Exp
 e8 = λ "x" (λ "y" ("x" ∘ "y")) ∘ (λ "u" (λ "v" "u") ∘ "k") ∘ "z"
 
--- e8' :: Exp'
--- e8' = App' 0 0
---         (App' 0 0
---           (Abs' 1 2 (Bin' 1 2)
---             (Abs' 1 1 (Bin' 1 1)
---               (App' 1 0
---                 (Bin' 1 2)
---                 (Bin' 1 1))))
---           (App' 2 1
---             (Abs' 3 2 (Bin' 3 2)
---               (Abs' 3 1 (Bin' 3 1)
---                 (Bin' 3 2)))
---             (Unb' 'k')))
---         (Unb' 'z')
+e8' :: Exp'
+e8' = App' 0 0
+        (App' 0 0
+          (Abs' 1
+            (Abs' 2
+              (App' 1 0
+                (Bin' 1)
+                (Bin' 2))))
+          (App' 3 1
+            (Abs' 4
+              (Abs' 5
+                (Bin' 4)))
+            (Unb' 'k')))
+        (Unb' 'z')
 
 i8 :: Spool IR
 i8 = Spool
   [
     Proc 1 -- xy.xy
     [
-      Sav (Unb 1)
+      Sav (Bin 1)
     , End (Ref 2)
     ]
   , Proc 2 -- y.xy
     [
-      Cal (Unb 1) Bin
+      Cal (Bin 1) Arg
     , End Ret
     ]
   , Proc 3 -- uv.u k
     [
-      Cal (Ref 4) (Con 'k')
-    , Cal Ret Bin
+      Cal (Ref 4) (Unb 'k')
+    , Cal Ret Arg
     , End Ret
     ]
   , Proc 4 -- uv.u
     [
-      Sav (Unb 4)
+      Sav (Bin 4)
     , End (Ref 5)
     ]
   , Proc 5 -- v.u
     [
-      End (Unb 4)
+      End (Bin 4)
     ]
   , Start
     [
       Cal (Ref 1) (Ref 3)
-    , Cal Ret (Con 'z')
+    , Cal Ret (Unb 'z')
     , End Ret
     ]
   ]
@@ -355,48 +355,48 @@ y   y   v   u        1   1   1   1
 e9 :: Exp
 e9 = λ "x" (λ "y" ("x" ∘ "y")) ∘ λ "u" (λ "v" "u") ∘ "k" ∘ "z"
 
--- e9' :: Exp'
--- e9' = App' 0 0
---         (App' 0 0
---           (App' 0 0
---             (Abs' 1 2 (Bin' 1 2)
---               (Abs' 1 1 (Bin' 1 1)
---                 (App' 1 0
---                   (Bin' 1 2)
---                   (Bin' 1 1))))
---             (Abs' 2 2 (Bin' 2 2)
---               (Abs' 2 1 (Bin' 2 1)
---                 (Bin' 2 2))))
---           (Unb' 'k'))
---         (Unb' 'z')
+e9' :: Exp'
+e9' = App' 0 0
+        (App' 0 0
+          (App' 0 0
+            (Abs' 1
+              (Abs' 2
+                (App' 1 0
+                  (Bin' 1)
+                  (Bin' 2))))
+            (Abs' 3
+              (Abs' 4
+                (Bin' 3))))
+          (Unb' 'k'))
+        (Unb' 'z')
 
 i9 :: Spool IR
 i9 = Spool
   [
     Proc 1 -- xy.xy
     [
-      Sav (Unb 1)
+      Sav (Bin 1)
     , End (Ref 2)
     ]
   , Proc 2 -- y.xy
     [
-      Cal (Unb 1) Bin
+      Cal (Bin 1) Arg
     , End Ret
     ]
   , Proc 3 -- uv.u
     [
-      Sav (Unb 3)
+      Sav (Bin 3)
     , End (Ref 4)
     ]
   , Proc 4 -- v.u
     [
-      End (Unb 3)
+      End (Bin 3)
     ]
   , Start
     [
       Cal (Ref 1) (Ref 3)
-    , Cal Ret (Con 'k')
-    , Cal Ret (Con 'z')
+    , Cal Ret (Unb 'k')
+    , Cal Ret (Unb 'z')
     , End Ret
     ]
   ]
@@ -412,41 +412,41 @@ i9 = Spool
 e10 :: Exp
 e10 = λ "x" (λ "y" ("x" ∘ λ "z" "z")) ∘ (λ "u"  "u") ∘ "k" ∘ "z"
 
--- e10' :: Exp'
--- e10' = App' 0 0
---          (App' 0 0
---            (App' 0 0
---              (Abs' 1 2 (Bin' 1 2)
---                (Abs' 1 1 (Bin' 1 1)
---                  (App' 1 0
---                    (Bin' 1 2)
---                    (Abs' 2 1 (Bin' 2 1) (Bin' 2 1)))))
---              (Abs' 2 1 (Bin' 2 1) (Bin' 2 1)))
---            (Unb' 'k'))
---          (Unb' 'v')
+e10' :: Exp'
+e10' = App' 0 0
+         (App' 0 0
+           (App' 0 0
+             (Abs' 1
+               (Abs' 2
+                 (App' 1 0
+                   (Bin' 1)
+                   (Abs' 3 (Bin' 3)))))
+             (Abs' 3 (Bin' 3)))
+           (Unb' 'k'))
+         (Unb' 'v')
 
 i10 :: Spool IR
 i10 = Spool
   [
     Proc 1 -- xy.x(z.z)
     [
-      Sav (Unb 1)
+      Sav (Bin 1)
     , End (Ref 2)
     ]
   , Proc 2 -- y.x(z.z)
     [
-      Cal (Unb 1) (Ref 3)
+      Cal (Bin 1) (Ref 3)
     , End Ret
     ]
   , Proc 3 -- z.z == u.u
     [
-      End Bin
+      End Arg
     ]
   , Start
     [
       Cal (Ref 1) (Ref 3)
-    , Cal Ret (Con 'k')
-    , Cal Ret (Con 'v')
+    , Cal Ret (Unb 'k')
+    , Cal Ret (Unb 'v')
     , End Ret
     ]
   ]
