@@ -42,7 +42,7 @@ x86 (Spool ls) = Spool
  where
   bss = pure . Text $ "R:      resb 2" : (filter (not . null) $ fmap unbinded ls)
   label l = case l of
-             Proc s i is -> Label ("_" <> show s <> "_" <> show i) $ procedure is
+             Proc s is -> Label ("_" <> show s) $ procedure is
              Start is -> Label "_start" $ start is
   procedure = (<> pure "ret") . concatMap instr
   start is = intercalate (pure mempty) $ concatMap instr is : [result, write, exit]
@@ -65,7 +65,7 @@ x86 (Spool ls) = Spool
     , "xor     rdi, rdi"
     , "syscall"
     ]
-  unbinded (Proc n a _) = if a > 1 then "U" <> show n <> "_" <> show (a - 2) <> ":   resq 1" else mempty
+  unbinded (Proc n _) = "U" <> show n <> ":     resq 1"
   unbinded _ = mempty
 
 instr :: Ins -> [Line]
@@ -81,9 +81,9 @@ instr i = case i of
   loa d = case d of
             Bin -> "rsi"
             Con c -> "0x" <> showHex (fromEnum c) mempty
-            Ref l a -> "_" <> show l <> "_" <> show a
+            Ref l -> "_" <> show l
             Ret -> "rax"
-            Unb l u -> "[U" <> show l <> "_" <> show u <> "]"
+            Unb l -> "[U" <> show l <> "]"
   ret Ret = True
   ret _ = False
 

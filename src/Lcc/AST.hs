@@ -1,10 +1,17 @@
+{-# OPTIONS_GHC -Wno-missing-methods #-}
+
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Lcc.AST where
+
+import Prelude hiding (abs)
 
 import Data.Function (applyWhen)
 import Data.String (IsString, fromString)
 import GHC.Show (showSpace)
+
+import Lcc.Util (patterns)
 
 data Exp
   = Abs Exp Exp
@@ -12,16 +19,21 @@ data Exp
   | Var String
 
 data Exp'
-  = Abs' Name Name Exp' Exp'
+  = Abs' Name Exp' Exp'
   | App' Name Name Exp' Exp'
-  | Bin' Name Name
+  | Bin' Name
   | Unb' Char
   deriving Show
 
 type Name = Int
 
+patterns ''Exp
+
 instance Show Exp where
   showsPrec n e = showsPrec' n (disc' e) e
+
+instance Num Exp' where
+  fromInteger = Bin' . fromInteger
 
 -- instance Show Exp' where
 --   show = undefined
@@ -37,7 +49,7 @@ enrich = go 0
  where
   go :: Int -> Exp -> Exp'
   go n e = case e of
-             Abs _h b -> Abs' n 1 (Bin' n n) (go (n+1) b)
+             Abs _h b -> Abs' n (Bin' n) (go (n+1) b)
              App f x -> App' n 0 (go (n+1) f) (go (n+1) x)
              Var v -> Unb' $ head v
 
@@ -55,6 +67,6 @@ disc' = \case
 
 showsPrec' :: Int -> Int -> Exp -> ShowS
 showsPrec' n p = \case
-                   Abs h b -> showParen (n > 2) $ shows h . applyWhen (disc' b /= 0) (showString ".") . showsPrec' 1 0 b
-                   App f x -> showParen (n > 1) $ showsPrec' 1 1 f . applyWhen (p == 1) showSpace . (showParen (disc' x == 0 && p == 0) $ showsPrec' 2 1 x)
+                   Abs h b -> showParen (n > 2) $ shows h . applyWhen (not $ abs b) (showString ".") . showsPrec' 1 0 b
+                   App f x -> showParen (n > 1) $ showsPrec' 1 1 f . applyWhen (p == 1) showSpace . (showParen (abs x && p == 0) $ showsPrec' 2 1 x)
                    Var x -> showString x

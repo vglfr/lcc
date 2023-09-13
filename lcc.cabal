@@ -16,6 +16,7 @@ common lcc
   build-depends:
       base == 4.18.*
     , process == 1.6.*
+    , template-haskell == 2.20.*
   default-Language:
     GHC2021
 
@@ -28,5 +29,6 @@ library
     , Lcc.Example
     , Lcc.IR
     , Lcc.Typecheck
+    , Lcc.Util
   hs-source-dirs:
     src

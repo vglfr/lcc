@@ -5,16 +5,16 @@ module Lcc.IR where
 import Prelude hiding (abs)
 import Data.List (intercalate)
 
-import Lcc.AST
-  (
-    Exp' (Abs', App', Bin', Unb')
-  )
+-- import Lcc.AST
+--   (
+--     Exp' (Abs', App', Bin', Unb')
+--   )
 
 newtype Spool a = Spool [a] deriving Eq
 
 data IR
   = Start [Ins]
-  | Proc Label Arity [Ins]
+  | Proc Label [Ins]
 
 data Ins
   = Cal Dat Dat
@@ -25,12 +25,12 @@ data Ins
 data Dat
   = Bin
   | Con Char
-  | Ref Int Int
+  | Ref Int
   | Ret
-  | Unb Int Int
+  | Unb Int
   deriving Show
 
-type Arity = Int
+-- type Arity = Int
 type Label = Int
 
 instance Show a => Show (Spool a) where
@@ -38,14 +38,15 @@ instance Show a => Show (Spool a) where
 
 instance Show IR where
   show (Start is) = intercalate "\n" $ "start:" : fmap (offset 2 . show) is
-  show (Proc s i is) = intercalate "\n" $ show s <> "_" <> show i <> ":" : fmap (offset 2 . show) is
+  show (Proc s is) = intercalate "\n" $ show s <> ":" : fmap (offset 2 . show) is
 
+{-
 spool :: Exp' -> Spool IR
 spool e = let ps = flatten e
            in Spool $ spools e : fmap spoolp ps
  where
   flatten e' = case e' of
-                 Abs' _ _ _ b -> e' : flatten b
+                 Abs' _ _ b -> e' : flatten b
                  App' _ a f x
                    | a > 0 -> e' : flatten f <> flatten x
                    | otherwise -> flatten f <> flatten x
@@ -60,7 +61,7 @@ spool e = let ps = flatten e
 
   -- spool' :: Exp' -> [Ins]
   spool' = \case
-             Abs' _ _ _ b -> spool' b
+             Abs' _ _ b -> spool' b
              App' _ _ f x -> pure $ Cal (dat f) (dat x)
              Bin' l a
                | a == 1 -> pure $ End Bin
@@ -78,6 +79,7 @@ spool e = let ps = flatten e
   end = \case
           Unb' c -> [End $ Con c]
           _ -> [End Ret]
+-}
 
 offset :: Int -> String -> String
 offset n s = replicate n ' ' <> s
