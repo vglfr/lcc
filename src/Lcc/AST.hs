@@ -26,27 +26,34 @@ data Exp'
 type Name = Int
 
 patterns ''Exp
+patterns ''Exp'
 
 instance Show Exp where
   showsPrec n e = showsPrec' n (disc' e) e
 
--- instance Show Exp' where
---   show = undefined
-
 instance IsString Exp where
   fromString = Var
+
+sfilter :: (Exp' -> Bool) -> (Exp' -> Bool) -> Exp' -> [Exp']
+sfilter p q e = let e0 = if q e then [e] else []
+                in e0 <> case e of
+                           Abs' _ b -> sfilter' b
+                           App' _ _ f x -> sfilter' f <> sfilter' x
+                           _ -> []
+ where
+  sfilter' e' = if p e' then sfilter p q e' else []
 
 -- convert to Exp'
 -- name functions & assign arities
 -- rename binded variables
-enrich :: Exp -> Exp'
-enrich = go 0
- where
-  go :: Int -> Exp -> Exp'
-  go n e = case e of
-             Abs _ b -> Abs' n (go (n+1) b)
-             App f x -> App' n 0 (go (n+1) f) (go (n+1) x)
-             Var v -> Unb' $ head v
+-- enrich :: Exp -> Exp'
+-- enrich = go 0
+--  where
+--   go :: Int -> Exp -> Exp'
+--   go n e = case e of
+--              Abs _ b -> Abs' n (go (n+1) b)
+--              App f x -> App' n 0 (go (n+1) f) (go (n+1) x)
+--              Var v -> Unb' $ head v
 
 λ :: Exp -> Exp -> Exp
 λ = Abs

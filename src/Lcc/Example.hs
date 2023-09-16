@@ -54,14 +54,14 @@ e2' = App' 0 0
 i2 :: Spool IR
 i2 = Spool
   [
-    Proc 1 -- x.x
-    [
-      End Arg
-    ]
-  , Start
+    Start
     [
       Cal (Ref 1) (Unb 'y')
     , End Ret
+    ]
+  , Proc 1 -- x.x
+    [
+      End Arg
     ]
   ]
 
@@ -84,14 +84,14 @@ e3' = App' 0 0
 i3 :: Spool IR
 i3 = Spool
   [
-    Proc 1 -- x.z
-    [
-      End (Unb 'z')
-    ]
-  , Start
+    Start
     [
       Cal (Ref 1) (Unb 'y')
     , End Ret
+    ]
+  , Proc 1 -- x.z
+    [
+      End (Unb 'z')
     ]
   ]
 
@@ -120,7 +120,13 @@ e4' = App' 0 0
 i4 :: Spool IR
 i4 = Spool
   [
-    Proc 1 -- xy.x
+    Start
+    [
+      Cal (Ref 1) (Unb 'u')
+    , Cal Ret (Unb 'v')
+    , End Ret
+    ]
+  , Proc 1 -- xy.x
     [
       Sav (Bin 1)
     , End (Ref 2)
@@ -128,12 +134,6 @@ i4 = Spool
   , Proc 2 -- y.x
     [
       End (Bin 1)
-    ]
-  , Start
-    [
-      Cal (Ref 1) (Unb 'u')
-    , Cal Ret (Unb 'v')
-    , End Ret
     ]
   ]
 
@@ -162,7 +162,13 @@ e5' = App' 0 0
 i5 :: Spool IR
 i5 = Spool
   [
-    Proc 1 -- xy.y
+    Start
+    [
+      Cal (Ref 1) (Unb 'u')
+    , Cal Ret (Unb 'v')
+    , End Ret
+    ]
+  , Proc 1 -- xy.y
     [
       Sav (Bin 1)
     , End (Ref 2)
@@ -170,12 +176,6 @@ i5 = Spool
   , Proc 2 -- y.y
     [
       End Arg
-    ]
-  , Start
-    [
-      Cal (Ref 1) (Unb 'u')
-    , Cal Ret (Unb 'v')
-    , End Ret
     ]
   ]
 
@@ -202,19 +202,19 @@ e6' = App' 0 0
 i6 :: Spool IR
 i6 = Spool
   [
-    Proc 1 -- x.x
+    Start
+    [
+      Cal (Ref 1) (Ref 2)
+    , Cal Ret (Unb 'z')
+    , End Ret
+    ]
+  , Proc 1 -- x.x
     [
       End Arg
     ]
   , Proc 2 -- y.y
     [
       End Arg
-    ]
-  , Start
-    [
-      Cal (Ref 1) (Ref 2)
-    , Cal Ret (Unb 'z')
-    , End Ret
     ]
   ]
 
@@ -236,7 +236,13 @@ e7' = App' 0 0
 i7 :: Spool IR
 i7 = Spool
   [
-    Proc 1 -- xy.xy
+    Start
+    [
+      Cal (Ref 1) (Ref 3)
+    , Cal Ret (Unb 'z')
+    , End Ret
+    ]
+  , Proc 1 -- xy.xy
     [
       Sav (Bin 1)
     , End (Ref 2)
@@ -249,12 +255,6 @@ i7 = Spool
   , Proc 3 -- y.y
     [
       End Arg
-    ]
-  , Start
-    [
-      Cal (Ref 1) (Ref 3)
-    , Cal Ret (Unb 'z')
-    , End Ret
     ]
   ]
 
@@ -299,7 +299,13 @@ e8' = App' 0 0
 i8 :: Spool IR
 i8 = Spool
   [
-    Proc 1 -- xy.xy
+    Start
+    [
+      Cal (Ref 1) (Ref 3)
+    , Cal Ret (Unb 'z')
+    , End Ret
+    ]
+  , Proc 1 -- xy.xy
     [
       Sav (Bin 1)
     , End (Ref 2)
@@ -323,12 +329,6 @@ i8 = Spool
   , Proc 5 -- v.u
     [
       End (Bin 4)
-    ]
-  , Start
-    [
-      Cal (Ref 1) (Ref 3)
-    , Cal Ret (Unb 'z')
-    , End Ret
     ]
   ]
 
@@ -373,7 +373,14 @@ e9' = App' 0 0
 i9 :: Spool IR
 i9 = Spool
   [
-    Proc 1 -- xy.xy
+    Start
+    [
+      Cal (Ref 1) (Ref 3)
+    , Cal Ret (Unb 'k')
+    , Cal Ret (Unb 'z')
+    , End Ret
+    ]
+  , Proc 1 -- xy.xy
     [
       Sav (Bin 1)
     , End (Ref 2)
@@ -391,13 +398,6 @@ i9 = Spool
   , Proc 4 -- v.u
     [
       End (Bin 3)
-    ]
-  , Start
-    [
-      Cal (Ref 1) (Ref 3)
-    , Cal Ret (Unb 'k')
-    , Cal Ret (Unb 'z')
-    , End Ret
     ]
   ]
 
@@ -421,14 +421,21 @@ e10' = App' 0 0
                  (App' 1 0
                    (Bin' 1)
                    (Abs' 3 (Bin' 3)))))
-             (Abs' 3 (Bin' 3)))
+             (Abs' 4 (Bin' 4)))
            (Unb' 'k'))
          (Unb' 'v')
 
 i10 :: Spool IR
 i10 = Spool
   [
-    Proc 1 -- xy.x(z.z)
+    Start
+    [
+      Cal (Ref 1) (Ref 4)
+    , Cal Ret (Unb 'k')
+    , Cal Ret (Unb 'v')
+    , End Ret
+    ]
+  , Proc 1 -- xy.x(z.z)
     [
       Sav (Bin 1)
     , End (Ref 2)
@@ -438,15 +445,12 @@ i10 = Spool
       Cal (Bin 1) (Ref 3)
     , End Ret
     ]
-  , Proc 3 -- z.z == u.u
+  , Proc 3 -- z.z
     [
       End Arg
     ]
-  , Start
+  , Proc 4 -- u.u
     [
-      Cal (Ref 1) (Ref 3)
-    , Cal Ret (Unb 'k')
-    , Cal Ret (Unb 'v')
-    , End Ret
+      End Arg
     ]
   ]

@@ -8,6 +8,7 @@ import Data.List (intercalate)
 import Lcc.AST
   (
     Exp' (Abs', App', Bin', Unb')
+  , abs', app', sfilter
   )
 
 newtype Spool a = Spool [a] deriving Eq
@@ -40,56 +41,38 @@ instance Show IR where
   show (Proc s is) = intercalate "\n" $ show s <> ":" : fmap (offset 2 . show) is
 
 spool :: Exp' -> Spool IR
-spool e = let ps = procedures e -- filter proc e
-           in Spool $ spools e : fmap spoolp ps
+spool e = let ls = e : sfilter (const True) abs' e
+              as = fmap (reverse . sfilter (not . abs') app') ls
+          in Spool $ fmap ir (zip ls as)
  where
-  procedures e' = case e' of
-                    Abs' _ b -> e' : procedures b
-                    App' _ _ f x -> procedures f <> procedures x
-                    -- App' _ a f x
-                    --   | a > 0 -> e' : flatten f <> flatten x
-                    --   | otherwise -> flatten f <> flatten x
-                    _ -> mempty
+  ir (l,as) = case l of
+                Abs' n _ -> Proc n $ spool' l as
+                _ -> Start $ spool' l as
 
-  -- spools :: Exp' -> IR
-  spools e' = Start $ spool' e' -- <> end e'
+  spool' l as = save' l <> concatMap (call' l) as <> return' l
 
-  -- spoolp :: Exp' -> IR
-  spoolp e'@(Abs' l _) = Proc l $ spool' e'
-  spoolp _ = undefined
+  save' e' = case e' of
+               Abs' _ b -> if abs' b then [Sav $ dat 0 e'] else []
+               _ -> []
 
-  -- spool' :: Exp' -> [Ins]
-  spool' = \case
-             Abs' l b -> case b of
-                           Abs' l' _ -> [Sav (Bin l), End (Ref l')]
-                           App' _ _ _f _x -> undefined
-                           Bin' l' | l == l' -> [End Arg]
-                                   | otherwise -> [End (Bin l')]
-                           Unb' c -> [End (Unb c)]
-             App' _ _ f x -> case f of
-                               Abs' _ _ -> [Cal (dat f) (dat x), End Ret]
-                               App' _ _ f' x' -> [Cal (dat f') (dat x'), Cal Ret (dat x), End Ret]
-                               _ -> error "type error: value cannot be lhs"
-             Unb' c -> [End (Unb c)]
-             _ -> error "Bin' shouldn't be top level"
+  call' e' = let m = case e' of
+                       Abs' l _ -> l
+                       _ -> 0
+             in \case
+                  App' _ _ f x -> [Cal (dat m f) (dat m x)]
+                  _ -> error "only applications could be called"
 
-  -- spool'' :: Exp' -> [Ins]
-  -- spool'' = \case
-  --             Abs' _ _ -> [Cal _ _]
-  --             App' _ _ _ _ -> [Cal Ret _]
-  --             _ -> error "type error: value cannot be lhs"
+  return' e' = case e' of
+                 Abs' l b -> case b of
+                               Bin' _ -> [End $ dat l b]
+                               _ -> [End $ dat 0 b]
+                 _ -> [End $ dat 0 e']
 
-  -- dat :: Exp' -> Dat
-  dat = \case
-          Abs' l _ -> Ref l
-          App' l _ _ _ -> Ref l
-          Bin' l -> Bin l
-          Unb' c -> Unb c
-
-  -- end :: Exp' -> [Ins]
-  -- end = \case
-  --         Unb' _ -> mempty
-  --         _ -> pure $ End Ret
+  dat m = \case
+            Abs' l _ -> Ref l
+            App' {} -> Ret
+            Bin' l -> if l == m then Arg else Bin l
+            Unb' c -> Unb c
 
 offset :: Int -> String -> String
 offset n s = replicate n ' ' <> s
