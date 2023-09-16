@@ -54,14 +54,14 @@ spool e = let ls = e : sfilter (const True) abs' e
 
   spool' l as = save' l <> concatMap (call' l) as <> return' l
 
-  save' e' = case e' of
-               Abs' _ b -> if abs' b then [Sav $ dat 0 e'] else []
-               _ -> []
+  save' = \case
+            Abs' h b -> if abs' b then [Sav $ Bin h] else []
+            _ -> []
 
-  call' e' (App' _ _ f x) = let m = case e' of
-                                      Abs' l _ -> l
-                                      _ -> 0
-                            in [Cal (dat m f) (dat m x)]
+  call' e' (App' _ f x) = let m = case e' of
+                                    Abs' l _ -> l
+                                    _ -> 0
+                          in [Cal (dat m f) (dat m x)]
 
   return' e' = case e' of
                  Abs' l b -> case b of

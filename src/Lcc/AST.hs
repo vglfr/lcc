@@ -19,7 +19,7 @@ data Exp
 
 data Exp'
   = Abs' Name Exp'
-  | App' Name Name Exp' Exp'
+  | App' Name Exp' Exp'
   | Bin' Name
   | Unb' Char
   deriving (Eq, Show)
@@ -35,15 +35,6 @@ instance Show Exp where
 instance IsString Exp where
   fromString = Var
 
-sfilter :: (Exp' -> Bool) -> (Exp' -> Bool) -> Exp' -> [Exp']
-sfilter p q e = let e0 = if q e then [e] else []
-                in e0 <> case e of
-                           Abs' _ b -> sfilter' b
-                           App' _ _ f x -> sfilter' f <> sfilter' x
-                           _ -> []
- where
-  sfilter' e' = if p e' then sfilter p q e' else []
-
 enrich :: Exp -> Exp'
 enrich = third . go . (1,[],)
  where
@@ -52,11 +43,25 @@ enrich = third . go . (1,[],)
                             in (n', m, Abs' n b')
                  App f x -> let (n' ,_,f') = go (n, m,f)
                                 (n'',_,x') = go (n',m,x)
-                            in (n'', m, App' 0 0 f' x')
+                            in (n'', m, App' 0 f' x')
                  Var v -> (n,m,) $ case lookup e m of
                                      Just n' -> Bin' n'
                                      Nothing -> Unb' (head v)
   third (_,_,x) = x
+
+partial :: Exp -> Bool
+partial = \case
+            App _f _x -> undefined
+            _ -> False
+
+sfilter :: (Exp' -> Bool) -> (Exp' -> Bool) -> Exp' -> [Exp']
+sfilter p q e = let e0 = if q e then [e] else []
+                in e0 <> case e of
+                           Abs' _ b -> sfilter' b
+                           App' _ f x -> sfilter' f <> sfilter' x
+                           _ -> []
+ where
+  sfilter' e' = if p e' then sfilter p q e' else []
 
 λ :: Exp -> Exp -> Exp
 λ = Abs

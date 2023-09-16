@@ -39,15 +39,15 @@ i1 = Spool
 {-
     @
    / \
-  λ   y
- / \
-x   x
+  x.  y
+  |
+  x
 -}
 e2 :: Exp
 e2 = λ "x" "x" ∘ "y"
 
 e2' :: Exp'
-e2' = App' 0 0
+e2' = App' 0
         (Abs' 1 (Bin' 1))
         (Unb' 'y')
 
@@ -69,15 +69,15 @@ i2 = Spool
 {-
     @
    / \
-  λ   y
- / \
-x   z
+  x.  y
+  |
+  z
 -}
 e3 :: Exp
 e3 = λ "x" "z" ∘ "y"
 
 e3' :: Exp'
-e3' = App' 0 0
+e3' = App' 0
         (Abs' 1 (Unb' 'z'))
         (Unb' 'y')
 
@@ -97,22 +97,22 @@ i3 = Spool
 
 {- xy.x u v -> u -}
 {-
-      @           0
-     / \         / \
-    @   v       2   2
-   / \         / \
-  λ   u      (2)  2
- / \         / \
-x   λ       1   1
-   / \         / \
-  y   x       1   1
+      @
+     / \
+    @   v
+   / \
+  x.  u
+  |
+  y.
+  |
+  x
 -}
 e4 :: Exp
 e4 = λ "x" (λ "y" "x") ∘ "u" ∘ "v"
 
 e4' :: Exp'
-e4' = App' 0 0
-        (App' 0 0
+e4' = App' 0
+        (App' 0
           (Abs' 1 (Abs' 2 (Bin' 1)))
           (Unb' 'u'))
         (Unb' 'v')
@@ -153,8 +153,8 @@ e5 :: Exp
 e5 = λ "x" (λ "y" "y") ∘ "u" ∘ "v"
 
 e5' :: Exp'
-e5' = App' 0 0
-        (App' 0 0
+e5' = App' 0
+        (App' 0
           (Abs' 1 (Abs' 2 (Bin' 2)))
           (Unb' 'u'))
         (Unb' 'v')
@@ -181,20 +181,20 @@ i5 = Spool
 
 {- x.x y.y z -> z -}
 {-
-       @             0
-      / \           / \
-     @   z         2   2
-    / \           / \
-  λ     λ      (2)   (2)
- / \   / \     / \   / \
-x   x y   y   1   1 1   1
+      @
+     / \
+    @   z
+   / \
+  x.  y.
+  |   |
+  x   y
 -}
 e6 :: Exp
 e6 = λ "x" "x" ∘ λ "y" "y" ∘ "z"
 
 e6' :: Exp'
-e6' = App' 0 0
-        (App' 0 0
+e6' = App' 0
+        (App' 0
           (Abs' 1 (Bin' 1))
           (Abs' 2 (Bin' 2)))
         (Unb' 'z')
@@ -219,15 +219,28 @@ i6 = Spool
   ]
 
 {- xy.xy y.y z -> z -}
+{-
+        @
+       / \
+      @   z
+     / \
+    x.  y.
+    |   |
+    y.  y
+    |
+    @
+   / \
+  x   y
+-}
 e7 :: Exp
 e7 = λ "x" (λ "y" ("x" ∘ "y")) ∘ λ "y" "y" ∘ "z"
 
 e7' :: Exp'
-e7' = App' 0 0
-        (App' 0 0
+e7' = App' 0
+        (App' 0
           (Abs' 1
             (Abs' 2
-              (App' 1 0
+              (App' 0
                 (Bin' 1)
                 (Bin' 2))))
           (Abs' 3 (Bin' 3)))
@@ -260,17 +273,17 @@ i7 = Spool
 
 {- xy.xy (uv.u k) z -> k -}
 {-
-            @                    0
-           / \                  / \
-          @   z                2   2
-         / \                  / \
-      λ       @           (2)      2
-     / \     / \          / \     / \
-    λ   x   λ   k        1   1  (2)  2
-   / \     / \          / \     / \
-  @   y   λ   u        1   1   1   1
- / \     / \          / \     / \
-x   y   v   u        2   2   1   1
+          @
+         / \
+        @   z
+        |
+    x. --- '@ 
+    |      / \
+    y.    u.  k
+    |     |
+    @     v.
+   / \    |
+  x   y   u
 
   xy.xy (uv.u k) z
   xy.xy ( v.k  ) z
@@ -282,14 +295,14 @@ e8 :: Exp
 e8 = λ "x" (λ "y" ("x" ∘ "y")) ∘ (λ "u" (λ "v" "u") ∘ "k") ∘ "z"
 
 e8' :: Exp'
-e8' = App' 0 0
-        (App' 0 0
+e8' = App' 0
+        (App' 0
           (Abs' 1
             (Abs' 2
-              (App' 1 0
+              (App' 0
                 (Bin' 1)
                 (Bin' 2))))
-          (App' 3 1
+          (App' 3
             (Abs' 4
               (Abs' 5
                 (Bin' 4)))
@@ -334,18 +347,20 @@ i8 = Spool
 
 {- xy.xy uv.u k z -> k -}
 {-
-            @                    0
-           / \                  / \
-          @   z                2   2
-         / \                  / \
-        @   k                2   2
-       / \                  / \
-    λ       λ           (2)     (2)
-   / \     / \          / \     / \
-  λ   x   λ   u        1   1   1   1
- / \     / \          / \     / \
-y   y   v   u        1   1   1   1
-
+          @
+         / \
+        @   z
+       / \
+      @   k
+     / \
+    x.  u.
+    |   |
+    y.  v.
+    |   |
+    @   u
+   / \
+  x   y
+  
   xy.x     y uv.u k z
    y.(uv.u)y      k z
       uv.u k        z
@@ -356,12 +371,12 @@ e9 :: Exp
 e9 = λ "x" (λ "y" ("x" ∘ "y")) ∘ λ "u" (λ "v" "u") ∘ "k" ∘ "z"
 
 e9' :: Exp'
-e9' = App' 0 0
-        (App' 0 0
-          (App' 0 0
+e9' = App' 0
+        (App' 0
+          (App' 0
             (Abs' 1
               (Abs' 2
-                (App' 1 0
+                (App' 0
                   (Bin' 1)
                   (Bin' 2))))
             (Abs' 3
@@ -403,6 +418,22 @@ i9 = Spool
 
 {- xy.x(z.z) u.u k v -> v -}
 {-
+          @
+         / \
+        @   v
+       / \
+      @   k
+     / \
+    x.  u.
+    |   |
+    y.  u
+    |
+    @
+   / \
+  x   z.
+      |
+      z
+
   xy.x    (z.z) u.u k v
    y.(u.u)(z.z)     k v
      (u.u)(z.z)       v
@@ -413,12 +444,12 @@ e10 :: Exp
 e10 = λ "x" (λ "y" ("x" ∘ λ "z" "z")) ∘ (λ "u"  "u") ∘ "k" ∘ "v"
 
 e10' :: Exp'
-e10' = App' 0 0
-         (App' 0 0
-           (App' 0 0
+e10' = App' 0
+         (App' 0
+           (App' 0
              (Abs' 1
                (Abs' 2
-                 (App' 1 0
+                 (App' 0
                    (Bin' 1)
                    (Abs' 3 (Bin' 3)))))
              (Abs' 4 (Bin' 4)))
@@ -454,3 +485,18 @@ i10 = Spool
       End Arg
     ]
   ]
+
+{- xy.xy w.w (uv.u k z) -> k -}
+{-
+           @
+           |
+      @ ------- @
+     / \       / \
+    x.  w.    @   z
+    |   |    / \
+    y.  w   u.  k
+    |       |
+    @       v.
+   / \      |
+  x   y     u
+-}

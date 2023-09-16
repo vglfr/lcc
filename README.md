@@ -6,11 +6,7 @@
 + register arguments
 
 - spool
-
 - enrich
+
 - typecheck
-- function type
-- rectify associativity
-- lambda lifting (LL)
-- LL optimizations
-- refactor Show for AST
+- quickcheck lawful programs
