@@ -7,6 +7,7 @@
 
 - spool
 
+- enrich
 - typecheck
 - function type
 - rectify associativity

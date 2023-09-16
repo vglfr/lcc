@@ -19,6 +19,9 @@ import Language.Haskell.TH
   , mkName, nameBase, reify
   )
 
+offset :: Int -> String -> String
+offset n s = replicate n ' ' <> s
+
 patterns :: Name -> Q [Dec]
 patterns t = do
   (TyConI c) <- reify t

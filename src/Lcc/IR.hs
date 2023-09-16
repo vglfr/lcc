@@ -1,4 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
+{-# OPTIONS_GHC -Wno-incomplete-patterns #-}
 
 module Lcc.IR where
 
@@ -10,18 +11,20 @@ import Lcc.AST
     Exp' (Abs', App', Bin', Unb')
   , abs', app', sfilter
   )
+import Lcc.Util (offset)
 
 newtype Spool a = Spool [a] deriving Eq
 
 data IR
   = Start [Ins]
   | Proc Label [Ins]
+  deriving Eq
 
 data Ins
   = Cal Dat Dat
   | End Dat
   | Sav Dat
-  deriving Show
+  deriving (Eq, Show)
 
 data Dat
   = Arg
@@ -29,7 +32,7 @@ data Dat
   | Ref Int
   | Ret
   | Unb Char
-  deriving Show
+  deriving (Eq, Show)
 
 type Label = Int
 
@@ -55,12 +58,10 @@ spool e = let ls = e : sfilter (const True) abs' e
                Abs' _ b -> if abs' b then [Sav $ dat 0 e'] else []
                _ -> []
 
-  call' e' = let m = case e' of
-                       Abs' l _ -> l
-                       _ -> 0
-             in \case
-                  App' _ _ f x -> [Cal (dat m f) (dat m x)]
-                  _ -> error "only applications could be called"
+  call' e' (App' _ _ f x) = let m = case e' of
+                                      Abs' l _ -> l
+                                      _ -> 0
+                            in [Cal (dat m f) (dat m x)]
 
   return' e' = case e' of
                  Abs' l b -> case b of
@@ -73,6 +74,3 @@ spool e = let ls = e : sfilter (const True) abs' e
             App' {} -> Ret
             Bin' l -> if l == m then Arg else Bin l
             Unb' c -> Unb c
-
-offset :: Int -> String -> String
-offset n s = replicate n ' ' <> s

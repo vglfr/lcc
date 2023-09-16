@@ -15,13 +15,14 @@ data Exp
   = Abs Exp Exp
   | App Exp Exp
   | Var String
+  deriving Eq
 
 data Exp'
   = Abs' Name Exp'
   | App' Name Name Exp' Exp'
   | Bin' Name
   | Unb' Char
-  deriving Show
+  deriving (Eq, Show)
 
 type Name = Int
 
@@ -43,17 +44,19 @@ sfilter p q e = let e0 = if q e then [e] else []
  where
   sfilter' e' = if p e' then sfilter p q e' else []
 
--- convert to Exp'
--- name functions & assign arities
--- rename binded variables
--- enrich :: Exp -> Exp'
--- enrich = go 0
---  where
---   go :: Int -> Exp -> Exp'
---   go n e = case e of
---              Abs _ b -> Abs' n (go (n+1) b)
---              App f x -> App' n 0 (go (n+1) f) (go (n+1) x)
---              Var v -> Unb' $ head v
+enrich :: Exp -> Exp'
+enrich = third . go . (1,[],)
+ where
+  go (n,m,e) = case e of
+                 Abs h b -> let (n',_,b') = go (n+1, (h,n) : m, b)
+                            in (n', m, Abs' n b')
+                 App f x -> let (n' ,_,f') = go (n, m,f)
+                                (n'',_,x') = go (n',m,x)
+                            in (n'', m, App' 0 0 f' x')
+                 Var v -> (n,m,) $ case lookup e m of
+                                     Just n' -> Bin' n'
+                                     Nothing -> Unb' (head v)
+  third (_,_,x) = x
 
 λ :: Exp -> Exp -> Exp
 λ = Abs

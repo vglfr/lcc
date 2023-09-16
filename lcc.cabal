@@ -32,3 +32,19 @@ library
     , Lcc.Util
   hs-source-dirs:
     src
+
+test-suite lct
+  import:
+    lcc
+  build-depends:
+      lcc
+    , hspec == 2.11.*
+  hs-source-dirs:
+    test
+  main-is:
+    Main.hs
+  other-modules:
+    AST
+    IR
+  type:
+    exitcode-stdio-1.0
