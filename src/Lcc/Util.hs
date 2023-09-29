@@ -29,8 +29,7 @@ patterns t = do
   concat <$> traverse (pattern n) cs
 
 pattern :: Name -> Con -> Q [Dec]
-pattern n (NormalC n' _) = let c = nameBase n'
-                               f = mkName $ toLower (head c) : tail c
+pattern n (NormalC n' _) = let f = mkName . fmap toLower $ nameBase n'
                             in pure
   [
     SigD f (AppT (AppT ArrowT (ConT n)) (ConT $ mkName "Bool"))

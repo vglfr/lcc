@@ -15,10 +15,15 @@ import Lcc.IR
   , Ins (Cal, End, Sav)
   , Spool (Spool)
   )
+import Lcc.Typecheck
+  (
+    TExp (TApp, TAbs, TVal)
+  , Typ (Any, Con)
+  )
 
 {- x -> x -}
 {-
-  x
+  x  C
 -}
 e1 :: Exp
 e1 = "x"
@@ -35,13 +40,34 @@ i1 = Spool
     ]
   ]
 
+t1 :: TExp
+t1 = TVal Con
+
+{-
+inference:
+- top level application MUST return a constant                                  ?  → ? : C
+- abstraction HAS arity 1                                                  (? : ?) → ? : C
+- argument IS a constant                                                   (? : ?) → C : C
+- therefore abstraction MUST return a constant                             (? : C) → C : C
+- abstraction returns its parameter, therefore parameter MUST be constant  (C : C) → C : C 
+
+check:
+  (C : C) → C
+       C
+-}
+
 {- x.x y -> y -}
 {-
-    @
-   / \
-  x.  y
-  |
-  x
+  (C : C) → C : C
+
+  (C : C) → C
+       C
+
+    @      @
+   / \    / \
+  x.  y  C.  C
+  |      |
+  x      C
 -}
 e2 :: Exp
 e2 = λ "x" "x" ∘ "y"
@@ -65,13 +91,23 @@ i2 = Spool
     ]
   ]
 
+t2 :: TExp
+t2 = TApp
+       (TAbs (TVal Con) (TVal Con))
+       (TVal Con)
+
 {- x.z y -> z -}
 {-
-    @
-   / \
-  x.  y
-  |
-  z
+  (* : C) → C : C
+
+  (* : C) → C
+       C
+
+    @      @
+   / \    / \
+  x.  y  *.  C
+  |      |
+  z      C
 -}
 e3 :: Exp
 e3 = λ "x" "z" ∘ "y"
@@ -95,17 +131,28 @@ i3 = Spool
     ]
   ]
 
+t3 :: TExp
+t3 = TApp
+       (TAbs (TVal Any) (TVal Con))
+       (TVal Con)
+
 {- xy.x u v -> u -}
 {-
-      @
-     / \
-    @   v
-   / \
-  x.  u
-  |
-  y.
-  |
-  x
+  (C → * : C) → C → C : C
+
+  (C → * : C) → C → C
+  (    * : C) →     C
+           C
+
+      @        @
+     / \      / \
+    @   v    @   C
+   / \      / \
+  x.  u    C.  C
+  |        |
+  y.       *.
+  |        |
+  x        C
 -}
 e4 :: Exp
 e4 = λ "x" (λ "y" "x") ∘ "u" ∘ "v"
@@ -137,17 +184,31 @@ i4 = Spool
     ]
   ]
 
+t4 :: TExp
+t4 = TApp
+       (TApp
+         (TAbs (TVal Con)
+           (TAbs (TVal Any) (TVal Con)))
+         (TVal Con))
+       (TVal Con)
+
 {- xy.y u v -> v -}
 {-
-      @        @       '2
-     / \      / \      / \
-    @   v    @   v   '1   v
-   / \      / \      / \
-  λ   u    x.  u    1'  u
- / \       |        |
-x   λ      y.       2'
-   / \     |
-  y   y    y
+  (* → C : C) → C → C : C
+
+  (* → C : C) → C → C
+  (    C : C) →     C
+           C
+
+      @        @       '2        @
+     / \      / \      / \      / \
+    @   v    @   v   '1   v    @   C
+   / \      / \      / \      / \
+  λ   u    x.  u    1'  u    *.  C
+ / \       |        |        |
+x   λ      y.       2'       C.
+   / \     |                 |
+  y   y    y                 C
 -}
 e5 :: Exp
 e5 = λ "x" (λ "y" "y") ∘ "u" ∘ "v"
@@ -179,15 +240,29 @@ i5 = Spool
     ]
   ]
 
+t5 :: TExp
+t5 = TApp
+       (TApp
+         (TAbs (TVal Any)
+           (TAbs (TVal Con) (TVal Con)))
+         (TVal Con))
+       (TVal Con)
+
 {- x.x y.y z -> z -}
 {-
-      @
-     / \
-    @   z
-   / \
-  x.  y.
-  |   |
-  x   y
+  ((C : C) : (C : C)) → (C : C) → C : C
+
+  ((C : C) : (C : C)) → (C : C) → C
+  (           C : C ) →         → C
+                  C
+
+      @            @
+     / \          / \
+    @   z        @   C
+   / \          / \
+  x.  y.   (C:C).  C.
+  |   |        |   |
+  x   y    (C:C)   C
 -}
 e6 :: Exp
 e6 = λ "x" "x" ∘ λ "y" "y" ∘ "z"
@@ -218,19 +293,32 @@ i6 = Spool
     ]
   ]
 
+t6 :: TExp
+t6 = TApp
+       (TApp
+         (TAbs (TAbs (TVal Con) (TVal Con)) (TAbs (TVal Con) (TVal Con)))
+         (TAbs (TVal Con) (TVal Con)))
+       (TVal Con)
+
 {- xy.xy y.y z -> z -}
 {-
-        @
-       / \
-      @   z
-     / \
-    x.  y.
-    |   |
-    y.  y
-    |
-    @
-   / \
-  x   y
+  ((C : C) → C : C) → (C : C) → C : C
+
+  ((C : C) → C : C) → (C : C) → C
+  (          C : C) →           C
+                 C
+
+        @            @
+       / \          / \
+      @   z        @   C
+     / \          / \
+    x.  y.   (C:C).  C.
+    |   |        |   |
+    y.  y        C.  C
+    |            |
+    @            @
+   / \          / \
+  x   y    (C:C)   C
 -}
 e7 :: Exp
 e7 = λ "x" (λ "y" ("x" ∘ "y")) ∘ λ "y" "y" ∘ "z"
@@ -270,6 +358,17 @@ i7 = Spool
       End Arg
     ]
   ]
+
+t7 :: TExp
+t7 = TApp
+       (TApp
+         (TAbs (TAbs (TVal Con) (TVal Con))
+           (TAbs (TVal Con)
+             (TApp
+               (TApp (TVal Con) (TVal Con))
+               (TVal Con))))
+         (TAbs (TVal Con) (TVal Con)))
+       (TVal Con)
 
 {- xy.xy (uv.u k) z -> k -}
 {-

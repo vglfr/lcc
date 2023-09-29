@@ -1,27 +1,46 @@
+{-# LANGUAGE TemplateHaskell #-}
+{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
+
 module Lcc.Typecheck where
 
-{-
-All values are single characters
+import Lcc.AST
+  (
+    Exp
+  )
+import Lcc.Util (patterns)
 
-Program always returns Val
-Program always terminates
+data TExp
+  = TAbs TExp TExp
+  | TApp TExp TExp
+  | TVal Typ
+  deriving (Eq, Show)
 
-Value can't be left:
-  Val @ _ - _|_
+data Typ
+  = Any
+  | Con
+  deriving (Eq, Show)
 
-Applications are flattened:
-  App @ _ - _|_
-  _ @ App - _|_
+patterns ''TExp
 
-Eager is simple, lazy is powerful
-Labeled functions are simple, inlined functions are powerful
-Total functions are simple, partial functions are powerful
+type' :: Exp -> TExp
+type' = undefined
 
-Let's start simple
+check :: TExp -> TExp
+check e = case e of
+            TAbs h b -> TAbs h (check b)
+            TApp f x
+              | tabs f -> let (TAbs h b) = f
+                          in if x <: h then b else error "types of argument and parameter differ"
+              | tapp f -> check $ TApp (check f) x
+              | otherwise -> error "Val cannot be lhs"
+            TVal _ -> e
+ where
+  (<:) :: TExp -> TExp -> Bool
+  (<:) (TVal a) (TVal b)
+    | b == Any = True
+    | b == a = True
+    | otherwise = False
+  (<:) _ _ = False
 
-Remains:
-  Abs @ Val
-  Abs @ Abs
-
-Abstraction returns either Abs or Val
--}
+check' :: TExp -> Bool
+check' = (== TVal Con) . check
