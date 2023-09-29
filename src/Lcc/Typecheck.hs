@@ -12,12 +12,7 @@ import Lcc.Util (patterns)
 data TExp
   = TAbs TExp TExp
   | TApp TExp TExp
-  | TVal Typ
-  deriving (Eq, Show)
-
-data Typ
-  = Any
-  | Con
+  | TVal
   deriving (Eq, Show)
 
 patterns ''TExp
@@ -30,17 +25,10 @@ check e = case e of
             TAbs h b -> TAbs h (check b)
             TApp f x
               | tabs f -> let (TAbs h b) = f
-                          in if x <: h then b else error "types of argument and parameter differ"
+                          in if x == h then b else error "types of argument and parameter differ"
               | tapp f -> check $ TApp (check f) x
               | otherwise -> error "Val cannot be lhs"
-            TVal _ -> e
- where
-  (<:) :: TExp -> TExp -> Bool
-  (<:) (TVal a) (TVal b)
-    | b == Any = True
-    | b == a = True
-    | otherwise = False
-  (<:) _ _ = False
+            TVal -> e
 
 check' :: TExp -> Bool
-check' = (== TVal Con) . check
+check' = (== TVal) . check

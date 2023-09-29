@@ -18,7 +18,6 @@ import Lcc.IR
 import Lcc.Typecheck
   (
     TExp (TApp, TAbs, TVal)
-  , Typ (Any, Con)
   )
 
 {- x -> x -}
@@ -41,7 +40,7 @@ i1 = Spool
   ]
 
 t1 :: TExp
-t1 = TVal Con
+t1 = TVal
 
 {-
 inference:
@@ -63,11 +62,11 @@ check:
   (C : C) → C
        C
 
-    @      @
-   / \    / \
-  x.  y  C.  C
-  |      |
-  x      C
+    @        1
+   / \      / \
+  x.  y  C C   C
+  |
+  x
 -}
 e2 :: Exp
 e2 = λ "x" "x" ∘ "y"
@@ -93,21 +92,18 @@ i2 = Spool
 
 t2 :: TExp
 t2 = TApp
-       (TAbs (TVal Con) (TVal Con))
-       (TVal Con)
+       (TAbs TVal TVal)
+       TVal
 
 {- x.z y -> z -}
 {-
-  (* : C) → C : C
+    @        1
+   / \      / \
+  x.  y  * C   C
+  |
+  z
 
-  (* : C) → C
-       C
-
-    @      @
-   / \    / \
-  x.  y  *.  C
-  |      |
-  z      C
+  x.z y -> z
 -}
 e3 :: Exp
 e3 = λ "x" "z" ∘ "y"
@@ -133,26 +129,23 @@ i3 = Spool
 
 t3 :: TExp
 t3 = TApp
-       (TAbs (TVal Any) (TVal Con))
-       (TVal Con)
+       (TAbs TVal TVal)
+       TVal
 
 {- xy.x u v -> u -}
 {-
-  (C → * : C) → C → C : C
+      @            2
+     / \          / \
+    @   v        1   C
+   / \          / \
+  x.  u    C *.C   C
+  |         |
+  y.       * C
+  |
+  x
 
-  (C → * : C) → C → C
-  (    * : C) →     C
-           C
-
-      @        @
-     / \      / \
-    @   v    @   C
-   / \      / \
-  x.  u    C.  C
-  |        |
-  y.       *.
-  |        |
-  x        C
+  xy.x u -> y.u
+   y.u v -> u
 -}
 e4 :: Exp
 e4 = λ "x" (λ "y" "x") ∘ "u" ∘ "v"
@@ -187,28 +180,25 @@ i4 = Spool
 t4 :: TExp
 t4 = TApp
        (TApp
-         (TAbs (TVal Con)
-           (TAbs (TVal Any) (TVal Con)))
-         (TVal Con))
-       (TVal Con)
+         (TAbs TVal
+           (TAbs TVal TVal))
+         TVal)
+       TVal
 
 {- xy.y u v -> v -}
 {-
-  (* → C : C) → C → C : C
+      @        @       '2            2
+     / \      / \      / \          / \
+    @   v    @   v   '1   v        1   C
+   / \      / \      / \          / \
+  λ   u    x.  u    1'  u    * C.C   C
+ / \       |        |         |
+x   λ      y.       2'       C C
+   / \     |
+  y   y    y
 
-  (* → C : C) → C → C
-  (    C : C) →     C
-           C
-
-      @        @       '2        @
-     / \      / \      / \      / \
-    @   v    @   v   '1   v    @   C
-   / \      / \      / \      / \
-  λ   u    x.  u    1'  u    *.  C
- / \       |        |        |
-x   λ      y.       2'       C.
-   / \     |                 |
-  y   y    y                 C
+  xy.y u -> y.y
+   y.y v -> v
 -}
 e5 :: Exp
 e5 = λ "x" (λ "y" "y") ∘ "u" ∘ "v"
@@ -243,26 +233,23 @@ i5 = Spool
 t5 :: TExp
 t5 = TApp
        (TApp
-         (TAbs (TVal Any)
-           (TAbs (TVal Con) (TVal Con)))
-         (TVal Con))
-       (TVal Con)
+         (TAbs TVal
+           (TAbs TVal TVal))
+         TVal)
+       TVal
 
 {- x.x y.y z -> z -}
 {-
-  ((C : C) : (C : C)) → (C : C) → C : C
+      @              2 
+     / \            / \
+    @   z          1   C
+   / \            / \
+  x.  y.   C.C C.C   C C
+  |   |
+  x   y
 
-  ((C : C) : (C : C)) → (C : C) → C
-  (           C : C ) →         → C
-                  C
-
-      @            @
-     / \          / \
-    @   z        @   C
-   / \          / \
-  x.  y.   (C:C).  C.
-  |   |        |   |
-  x   y    (C:C)   C
+  x.x y.y -> y.y
+    y.y z -> z
 -}
 e6 :: Exp
 e6 = λ "x" "x" ∘ λ "y" "y" ∘ "z"
@@ -296,29 +283,57 @@ i6 = Spool
 t6 :: TExp
 t6 = TApp
        (TApp
-         (TAbs (TAbs (TVal Con) (TVal Con)) (TAbs (TVal Con) (TVal Con)))
-         (TAbs (TVal Con) (TVal Con)))
-       (TVal Con)
+         (TAbs (TAbs TVal TVal) (TAbs TVal TVal))
+         (TAbs TVal TVal))
+       TVal
 
 {- xy.xy y.y z -> z -}
 {-
-  ((C : C) → C : C) → (C : C) → C : C
+        @                2
+       / \              / \
+      @   z            1   C
+     / \              / \
+    x.  y.   (C.C) C.3   C C
+    |   |         |
+    y.  y        C 3
+    |             / \
+    @          C C   C
+   / \
+  x   y
 
-  ((C : C) → C : C) → (C : C) → C
-  (          C : C) →           C
-                 C
+[
+  TApp (* -> * -> *) (* -> *) :: (* -> *)  -- 1
+, TApp (* -> *) C             :: *         -- 2
+, TApp (* -> *) *             :: C         -- 3
+]
 
-        @            @
-       / \          / \
-      @   z        @   C
-     / \          / \
-    x.  y.   (C:C).  C.
-    |   |        |   |
-    y.  y        C.  C
-    |            |
-    @            @
-   / \          / \
-  x   y    (C:C)   C
+[
+  TApp ((C -> C) -> C -> TApp (C -> C) C) (C -> C) :: (C -> TApp (C -> C) C)  -- (1)
+, TApp (C -> TApp (C -> C)) C                      :: TApp (C -> C) C         -- (2)
+, TApp (C -> C) C                                  :: C                       -- (3)
+]
+
+[
+  TApp ((C -> C) -> C -> TApp (C -> C) C) (C -> C) :: (C -> TApp (C -> C) C)  -- (1)
+, TApp (1) C                                       :: TApp (C -> C) C         -- (2)
+, (2)                                              :: C                       -- (3)
+]
+
+[
+  *.*.*   *.*  :: *.*      -- (1)
+,   *.*   C    :: *.*   C  -- (2)
+,   C.C   C    :: C        -- (3)
+]
+
+[
+  (C.C).C.(C.C#C)   C.C  -> C.(C.C#C)  -- (1)
+,             (1)   C    -> (C.C)#C    -- (2)
+,                (2)     -> C          -- (3)
+]
+
+   xy.xy y.y -> u.(y.y)u
+  u.(y.y)u z -> y.y z
+       y.y z -> z
 -}
 e7 :: Exp
 e7 = λ "x" (λ "y" ("x" ∘ "y")) ∘ λ "y" "y" ∘ "z"
@@ -362,33 +377,38 @@ i7 = Spool
 t7 :: TExp
 t7 = TApp
        (TApp
-         (TAbs (TAbs (TVal Con) (TVal Con))
-           (TAbs (TVal Con)
+         (TAbs (TAbs TVal TVal)
+           (TAbs TVal
              (TApp
-               (TApp (TVal Con) (TVal Con))
-               (TVal Con))))
-         (TAbs (TVal Con) (TVal Con)))
-       (TVal Con)
+               (TApp (TAbs TVal TVal) TVal)
+               TVal)))
+         (TAbs TVal TVal))
+       TVal
 
 {- xy.xy (uv.u k) z -> k -}
 {-
-          @
-         / \
-        @   z
-        |
-    x. --- '@ 
-    |      / \
-    y.    u.  k
-    |     |
-    @     v.
-   / \    |
-  x   y   u
+          @                3
+         / \              / \
+        @   z            2   C
+        |                |
+    x. --- '@        ?. ---  1
+    |      / \       |      / \
+    y.    u.  k      ?.    C.  C
+    |     |          |     |
+    @     v.         4     C.
+   / \    |         / \    |
+  x   y   u    (C.C)   C   C
 
   xy.xy (uv.u k) z
   xy.xy ( v.k  ) z
    y.(v.k)y      z
       v.k z
         k
+
+      uv.u k -> v.k
+   xy.xy v.k -> y.(v.k)y
+  y.(v.k)y z -> v.k z
+       v.k z -> k
 -}
 e8 :: Exp
 e8 = λ "x" (λ "y" ("x" ∘ "y")) ∘ (λ "u" (λ "v" "u") ∘ "k") ∘ "z"
@@ -446,17 +466,17 @@ i8 = Spool
 
 {- xy.xy uv.u k z -> k -}
 {-
-          @
-         / \
-        @   z
-       / \
-      @   k
-     / \
-    x.  u.
-    |   |
-    y.  v.
-    |   |
-    @   u
+          @                4
+         / \              / \
+        @   z            2   C
+       / \              / \
+      @   k            1   C
+     / \              / \
+    x.  u.   C.*.C C.3   C *.C
+    |   |         |       |
+    y.  v.       C 3     * C
+    |   |         / \
+    @   u      * C   C
    / \
   x   y
   
@@ -465,6 +485,11 @@ i8 = Spool
       uv.u k        z
        v.  k        z
            k
+
+  C.*.C C.3   @   C *.C   ->   C C.*.C  --   xy.xy uv.u -> y.(uv.u)y
+    C C.*.C   @   C       ->     C *.C  --  y.(uv.u)y k -> uv.u k
+      C *.C   @   C       ->       * C  --       uv.u k -> v.k
+        * C   @   *       ->         C  --        v.k z -> k
 -}
 e9 :: Exp
 e9 = λ "x" (λ "y" ("x" ∘ "y")) ∘ λ "u" (λ "v" "u") ∘ "k" ∘ "z"
@@ -538,6 +563,11 @@ i9 = Spool
      (u.u)(z.z)       v
       z.z             v
         v
+
+   xy.x(z.z) u.u -> y.(u.u)(z.z)
+  y.(u.u)(z.z) k -> (u.u)(z.z)
+      (u.u)(z.z) -> z.z
+           z.z v -> v
 -}
 e10 :: Exp
 e10 = λ "x" (λ "y" ("x" ∘ λ "z" "z")) ∘ (λ "u"  "u") ∘ "k" ∘ "v"
