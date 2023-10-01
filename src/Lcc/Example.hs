@@ -17,7 +17,8 @@ import Lcc.IR
   )
 import Lcc.Typecheck
   (
-    TExp (TApp, TAbs, TVal)
+    TIns (TCal, TCon, TFun)
+  , TExp (TApp, TAbs, TVal)
   )
 
 {- x -> x -}
@@ -42,31 +43,21 @@ i1 = Spool
 t1 :: TExp
 t1 = TVal
 
-{-
-inference:
-- top level application MUST return a constant                                  ?  → ? : C
-- abstraction HAS arity 1                                                  (? : ?) → ? : C
-- argument IS a constant                                                   (? : ?) → C : C
-- therefore abstraction MUST return a constant                             (? : C) → C : C
-- abstraction returns its parameter, therefore parameter MUST be constant  (C : C) → C : C 
-
-check:
-  (C : C) → C
-       C
--}
+t1' :: [TIns]
+t1' =
+  [
+    TCon
+  ]
 
 {- x.x y -> y -}
 {-
-  (C : C) → C : C
-
-  (C : C) → C
-       C
-
     @        1
    / \      / \
   x.  y  C C   C
   |
   x
+
+  x.x y -> y
 -}
 e2 :: Exp
 e2 = λ "x" "x" ∘ "y"
@@ -94,6 +85,13 @@ t2 :: TExp
 t2 = TApp
        (TAbs TVal TVal)
        TVal
+
+t2' :: [TIns]
+t2' =
+  [
+    TFun TCon TCon
+  , TCon
+  ]
 
 {- x.z y -> z -}
 {-
@@ -131,6 +129,13 @@ t3 :: TExp
 t3 = TApp
        (TAbs TVal TVal)
        TVal
+
+t3' :: [TIns]
+t3' =
+  [
+    TFun TCon TCon
+  , TCon
+  ]
 
 {- xy.x u v -> u -}
 {-
@@ -185,6 +190,14 @@ t4 = TApp
          TVal)
        TVal
 
+t4' :: [TIns]
+t4' =
+  [
+    TFun TCon (TFun TCon TCon)
+  , TCon
+  , TCon
+  ]
+
 {- xy.y u v -> v -}
 {-
       @        @       '2            2
@@ -238,6 +251,14 @@ t5 = TApp
          TVal)
        TVal
 
+t5' :: [TIns]
+t5' =
+  [
+    TFun TCon (TFun TCon TCon)
+  , TCon
+  , TCon
+  ]
+
 {- x.x y.y z -> z -}
 {-
       @              2 
@@ -287,6 +308,14 @@ t6 = TApp
          (TAbs TVal TVal))
        TVal
 
+t6' :: [TIns]
+t6' =
+  [
+    TFun (TFun TCon TCon) (TFun TCon TCon)
+  , TFun TCon TCon
+  , TCon
+  ]
+
 {- xy.xy y.y z -> z -}
 {-
         @                2
@@ -300,36 +329,6 @@ t6 = TApp
     @          C C   C
    / \
   x   y
-
-[
-  TApp (* -> * -> *) (* -> *) :: (* -> *)  -- 1
-, TApp (* -> *) C             :: *         -- 2
-, TApp (* -> *) *             :: C         -- 3
-]
-
-[
-  TApp ((C -> C) -> C -> TApp (C -> C) C) (C -> C) :: (C -> TApp (C -> C) C)  -- (1)
-, TApp (C -> TApp (C -> C)) C                      :: TApp (C -> C) C         -- (2)
-, TApp (C -> C) C                                  :: C                       -- (3)
-]
-
-[
-  TApp ((C -> C) -> C -> TApp (C -> C) C) (C -> C) :: (C -> TApp (C -> C) C)  -- (1)
-, TApp (1) C                                       :: TApp (C -> C) C         -- (2)
-, (2)                                              :: C                       -- (3)
-]
-
-[
-  *.*.*   *.*  :: *.*      -- (1)
-,   *.*   C    :: *.*   C  -- (2)
-,   C.C   C    :: C        -- (3)
-]
-
-[
-  (C.C).C.(C.C#C)   C.C  -> C.(C.C#C)  -- (1)
-,             (1)   C    -> (C.C)#C    -- (2)
-,                (2)     -> C          -- (3)
-]
 
    xy.xy y.y -> u.(y.y)u
   u.(y.y)u z -> y.y z
@@ -384,6 +383,14 @@ t7 = TApp
                TVal)))
          (TAbs TVal TVal))
        TVal
+
+t7' :: [TIns]
+t7' =
+  [
+    TFun (TFun TCon TCon) (TFun TCon (TCal (TFun TCon TCon) TCon))
+  , TFun TCon TCon
+  , TCon
+  ]
 
 {- xy.xy (uv.u k) z -> k -}
 {-
@@ -464,6 +471,22 @@ i8 = Spool
     ]
   ]
 
+{- xy.xy (uv.u k) z -> k -}
+{-
+  xy.x       y (uv.u k) z
+   y.(uv.u k)y          z
+      uv.u k z
+       v.k   z
+         k
+-}
+t8' :: [TIns]
+t8' =
+  [
+    TFun (TFun TCon TCon) (TFun TCon (TCal (TFun TCon TCon) TCon))
+  , TFun TCon TCon -- implicit teval
+  , TCon
+  ]
+
 {- xy.xy uv.u k z -> k -}
 {-
           @                4
@@ -540,6 +563,15 @@ i9 = Spool
     ]
   ]
 
+t9' :: [TIns]
+t9' =
+  [
+    TFun (TFun TCon (TFun TCon TCon)) (TFun TCon (TCal (TFun TCon (TFun TCon TCon)) TCon))
+  , TFun TCon (TFun TCon TCon)
+  , TCon
+  , TCon
+  ]
+
 {- xy.x(z.z) u.u k v -> v -}
 {-
           @
@@ -613,6 +645,16 @@ i10 = Spool
     [
       End Arg
     ]
+  ]
+
+{- xy.x(z.z) u.u k v -> v -}
+t10' :: [TIns]
+t10' =
+  [
+    TFun (TFun TCon TCon) (TFun TCon (TCal (TFun (TFun TCon TCon) (TFun TCon TCon)) (TFun TCon TCon)))
+  , TFun TCon TCon
+  , TCon
+  , TCon
   ]
 
 {- xy.xy w.w (uv.u k z) -> k -}
