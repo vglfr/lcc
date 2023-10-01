@@ -28,18 +28,17 @@ check is
   | null is = error "empty type expression list"
   | length is == 1 = head is
   | otherwise = let (f:x:xs) = is
-                in check $ teval f x <> xs
+                in case eval f x of
+                     TCal f' x' -> check $ f' : x' : xs
+                     x'@_ -> check $ x' : xs
  where
-  teval :: TIns -> TIns -> [TIns]
-  teval f x
-    | tcon f = error "lhs must be function"
-    | otherwise = let (TFun i o) = f
-                  in if i == x
-                     then if tcal o
-                          then let (TCal f' x') = o
-                               in [f', x']
-                          else [o]
-                     else error "argument type doesn't match parameter type"
+  -- eval :: TIns -> TIns -> TIns
+  eval f x
+   | tcon f = error "lhs must be function"
+   | otherwise = let (TFun i o) = f
+                 in if i == x
+                    then o
+                    else error "argument type doesn't match parameter type"
 
 check' :: [TIns] -> Bool
 check' = (== TCon) . check

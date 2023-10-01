@@ -63,7 +63,7 @@ e2 :: Exp
 e2 = λ "x" "x" ∘ "y"
 
 e2' :: Exp'
-e2' = App' 0
+e2' = App'
         (Abs' 1 (Bin' 1))
         (Unb' 'y')
 
@@ -107,7 +107,7 @@ e3 :: Exp
 e3 = λ "x" "z" ∘ "y"
 
 e3' :: Exp'
-e3' = App' 0
+e3' = App'
         (Abs' 1 (Unb' 'z'))
         (Unb' 'y')
 
@@ -156,8 +156,8 @@ e4 :: Exp
 e4 = λ "x" (λ "y" "x") ∘ "u" ∘ "v"
 
 e4' :: Exp'
-e4' = App' 0
-        (App' 0
+e4' = App'
+        (App'
           (Abs' 1 (Abs' 2 (Bin' 1)))
           (Unb' 'u'))
         (Unb' 'v')
@@ -217,8 +217,8 @@ e5 :: Exp
 e5 = λ "x" (λ "y" "y") ∘ "u" ∘ "v"
 
 e5' :: Exp'
-e5' = App' 0
-        (App' 0
+e5' = App'
+        (App'
           (Abs' 1 (Abs' 2 (Bin' 2)))
           (Unb' 'u'))
         (Unb' 'v')
@@ -276,8 +276,8 @@ e6 :: Exp
 e6 = λ "x" "x" ∘ λ "y" "y" ∘ "z"
 
 e6' :: Exp'
-e6' = App' 0
-        (App' 0
+e6' = App'
+        (App'
           (Abs' 1 (Bin' 1))
           (Abs' 2 (Bin' 2)))
         (Unb' 'z')
@@ -338,11 +338,11 @@ e7 :: Exp
 e7 = λ "x" (λ "y" ("x" ∘ "y")) ∘ λ "y" "y" ∘ "z"
 
 e7' :: Exp'
-e7' = App' 0
-        (App' 0
+e7' = App'
+        (App'
           (Abs' 1
             (Abs' 2
-              (App' 0
+              (App'
                 (Bin' 1)
                 (Bin' 2))))
           (Abs' 3 (Bin' 3)))
@@ -392,25 +392,47 @@ t7' =
   , TCon
   ]
 
+{-
+t7' =
+  [
+    TFun (TFun TCon TCon) (TFun TCon TCal)
+  , TFun TCon TCon
+  , TCon
+  , TFun TCon TCon
+  , TCon
+  ]
+-}
+
 {- xy.xy (uv.u k) z -> k -}
 {-
-          @                3
-         / \              / \
-        @   z            2   C
-        |                |
-    x. --- '@        ?. ---  1
-    |      / \       |      / \
-    y.    u.  k      ?.    C.  C
-    |     |          |     |
-    @     v.         4     C.
-   / \    |         / \    |
-  x   y   u    (C.C)   C   C
+          @                @                   3
+         / \              / \                 / \
+        @   z            @   z               2   C
+        |                |                   |
+    x. --- '@       x. ----- a.          ?. ---  1
+    |      / \      |        |           |      / \
+    y.    u.  k     y.       @           ?.    C.  C
+    |     |         |       / \          |     |
+    @     v.        @      @   a         4     C.
+   / \    |        / \    / \           / \    |
+  x   y   u       x   y  u.  k     (C.C)   C   C
+                         |
+                         v.
+                         |
+                         u
 
   xy.xy (uv.u k) z
   xy.xy ( v.k  ) z
    y.(v.k)y      z
       v.k z
         k
+
+  xy.x           y a.(uv.u)ka z
+   y.(a.(uv.u)ka)y            z
+      a.(uv.u)ka z
+         uv.u kz
+          v.k  z
+            k
 
       uv.u k -> v.k
    xy.xy v.k -> y.(v.k)y
@@ -421,18 +443,19 @@ e8 :: Exp
 e8 = λ "x" (λ "y" ("x" ∘ "y")) ∘ (λ "u" (λ "v" "u") ∘ "k") ∘ "z"
 
 e8' :: Exp'
-e8' = App' 0
-        (App' 0
+e8' = App'
+        (App'
           (Abs' 1
             (Abs' 2
-              (App' 0
+              (App'
                 (Bin' 1)
                 (Bin' 2))))
-          (App' 3
-            (Abs' 4
-              (Abs' 5
-                (Bin' 4)))
-            (Unb' 'k')))
+          (Abs' 3
+            (App'
+              (App'
+                (Abs' 4 (Abs' 5 (Bin' 4)))
+                (Unb' 'k'))
+              (Bin' 3))))
         (Unb' 'z')
 
 i8 :: Spool IR
@@ -483,7 +506,9 @@ t8' :: [TIns]
 t8' =
   [
     TFun (TFun TCon TCon) (TFun TCon (TCal (TFun TCon TCon) TCon))
-  , TFun TCon TCon -- implicit teval
+  , TFun TCon TCon -- implicit eval
+  --   TFun (TCal (TFun TCon (TFun TCon TCon)) TCon) (TFun TCon (TCal (TCal (TFun TCon (TFun TCon TCon)) TCon) TCon))
+  -- , TCal (TFun TCon (TFun TCon TCon)) TCon
   , TCon
   ]
 
@@ -518,12 +543,12 @@ e9 :: Exp
 e9 = λ "x" (λ "y" ("x" ∘ "y")) ∘ λ "u" (λ "v" "u") ∘ "k" ∘ "z"
 
 e9' :: Exp'
-e9' = App' 0
-        (App' 0
-          (App' 0
+e9' = App'
+        (App'
+          (App'
             (Abs' 1
               (Abs' 2
-                (App' 0
+                (App'
                   (Bin' 1)
                   (Bin' 2))))
             (Abs' 3
@@ -572,6 +597,18 @@ t9' =
   , TCon
   ]
 
+{-
+t9' =
+  [
+    TFun (TFun TCon (TFun TCon TCon)) (TFun TCon TCal)
+  , TFun TCon (TFun TCon TCon)
+  , TCon
+  , TFun TCon (TFun TCon TCon)
+  , TCon
+  , TCon
+  ]
+-}
+
 {- xy.x(z.z) u.u k v -> v -}
 {-
           @
@@ -605,12 +642,12 @@ e10 :: Exp
 e10 = λ "x" (λ "y" ("x" ∘ λ "z" "z")) ∘ (λ "u"  "u") ∘ "k" ∘ "v"
 
 e10' :: Exp'
-e10' = App' 0
-         (App' 0
-           (App' 0
+e10' = App'
+         (App'
+           (App'
              (Abs' 1
                (Abs' 2
-                 (App' 0
+                 (App'
                    (Bin' 1)
                    (Abs' 3 (Bin' 3)))))
              (Abs' 4 (Bin' 4)))

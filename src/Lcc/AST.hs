@@ -19,7 +19,7 @@ data Exp
 
 data Exp'
   = Abs' Name Exp'
-  | App' Name Exp' Exp'
+  | App' Exp' Exp'
   | Bin' Name
   | Unb' Char
   deriving (Eq, Show)
@@ -41,9 +41,11 @@ enrich = third . go . (1,[],)
   go (n,m,e) = case e of
                  Abs h b -> let (n',_,b') = go (n+1, (h,n) : m, b)
                             in (n', m, Abs' n b')
-                 App f x -> let (n' ,_,f') = go (n, m,f)
-                                (n'',_,x') = go (n',m,x)
-                            in (n'', m, App' 0 f' x')
+                 App f x -> let (n' ,_,f') = go (n,m,f)
+                                (n'',_,x') = if app x
+                                             then go (n',m,Abs (Var "a") (App x (Var "a")))
+                                             else go (n',m,x)
+                            in (n'', m, App' f' x')
                  Var v -> (n,m,) $ case lookup e m of
                                      Just n' -> Bin' n'
                                      Nothing -> Unb' (head v)
@@ -58,7 +60,7 @@ sfilter :: (Exp' -> Bool) -> (Exp' -> Bool) -> Exp' -> [Exp']
 sfilter p q e = let e0 = if q e then [e] else []
                 in e0 <> case e of
                            Abs' _ b -> sfilter' b
-                           App' _ f x -> sfilter' f <> sfilter' x
+                           App' f x -> sfilter' f <> sfilter' x
                            _ -> []
  where
   sfilter' e' = if p e' then sfilter p q e' else []
