@@ -4,9 +4,7 @@
 + first order functions
 + partial functions
 + register arguments
-
-- spool
-- enrich
++ spool
++ enrich
 
 - typecheck
-- quickcheck lawful programs
